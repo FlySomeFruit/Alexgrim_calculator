@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор стоимости мастер-классов</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.page{width:100%;max-width:1280px;display:flex;flex-direction:row;gap:32px;align-items:flex-start;justify-content:center;flex-wrap:wrap;margin:0 auto}
+.container{background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:100%;max-width:600px;padding:40px}
+.container.travel-block{max-width:600px}
+h1{color:#333;margin-bottom:30px;text-align:center;font-size:28px}
+.form-group{margin-bottom:25px}
+label{display:block;margin-bottom:8px;color:#555;font-weight:500;font-size:14px}
+.search-wrapper{position:relative}
+input[type="text"],input[type="number"]{width:100%;padding:12px 15px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;transition:border-color 0.3s}
+input[type="text"]:focus,input[type="number"]:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+.dropdown-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:2px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;max-height:350px;overflow-y:auto;z-index:100;display:none;box-shadow:0 4px 6px rgba(0,0,0,0.1)}
+.dropdown-list.active{display:block}
+.dropdown-item{padding:12px 15px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background-color 0.2s;font-size:14px}
+.dropdown-item:hover{background-color:#f5f5f5}
+.dropdown-item em{background-color:#fff3cd;font-style:normal;padding:2px 4px;border-radius:3px;font-weight:600}
+.toggle-group{margin-bottom:25px;display:flex;align-items:center;gap:15px;padding:15px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef}
+.toggle-switch{width:44px;height:24px;background:#ccc;border-radius:12px;position:relative;cursor:pointer;transition:background-color 0.3s}
+.toggle-switch.active{background:#667eea}
+.toggle-knob{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.2);transition:transform 0.3s}
+.toggle-switch.active .toggle-knob{transform:translateX(20px)}
+.toggle-label{font-size:15px;color:#555;font-weight:500;user-select:none}
+.button-group{display:flex;gap:10px;margin-top:30px}
+button{flex:1;padding:12px 20px;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.3s}
+.btn-calculate{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+.btn-calculate:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(102,126,234,0.3)}
+.btn-calculate:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-reset{background:#f0f0f0;color:#333}
+.btn-reset:hover{background:#e0e0e0}
+.result{margin-top:40px;padding:25px;background:#f9f9f9;border-radius:8px;border-left:4px solid #667eea;display:none}
+.result.active{display:block;animation:slideIn 0.3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.result-title{font-size:18px;font-weight:600;color:#333;margin-bottom:15px}
+.result-link{display:inline-block;color:#667eea;text-decoration:none;word-break:break-all;margin-bottom:15px;font-size:13px;transition:color 0.2s}
+.result-link:hover{color:#764ba2;text-decoration:underline}
+.result-price{font-size:24px;font-weight:700;color:#667eea;margin-bottom:20px}
+.result-details{font-size:14px;color:#666;margin-bottom:15px;line-height:1.6}
+.btn-copy{width:100%;background:#667eea;color:#fff;padding:10px 15px;margin-top:15px}
+.btn-copy:hover{background:#764ba2}
+.copy-success{display:none;color:#28a745;font-size:14px;margin-top:10px;text-align:center}
+.copy-success.show{display:block}
+.error{color:#dc3545;font-size:14px;margin-top:8px;display:none}
+.error.show{display:block}
+@media (max-width:600px){
+  body{padding:12px;display:block}
+  .page{display:flex;flex-direction:column-reverse;gap:14px;align-items:stretch}
+  .container{padding:16px;border-radius:12px;max-width:100%;width:100%;margin:0}
+  h1{font-size:20px;margin-bottom:14px}
+  .form-group{margin-bottom:16px}
+  .button-group{flex-direction:column}
+  button{width:100%}
+  .toggle-group{flex-direction:row;align-items:center}
+  .toggle-label{font-size:14px}
+  .travel-row{flex-direction:column}
+  .travel-map{height:200px}
+  .travel-import-mini{position:static;margin-top:8px;display:inline-block}
+  body{align-items:flex-start}
+}
+</style>
+<style>
+.travel-container{margin-top:30px;padding:20px;border:2px dashed #e0e0e0;border-radius:12px;background:#fafafa;position:relative}
+.travel-title{font-size:18px;font-weight:600;color:#333;margin-bottom:12px}
+.travel-row{display:flex;gap:10px;flex-wrap:wrap}
+.travel-row input[type="text"],.travel-row input[type="number"]{flex:1;min-width:200px}
+.travel-actions{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.travel-result{margin-top:12px;font-size:14px;color:#555}
+.travel-pill{display:inline-block;background:#eef2ff;color:#3b5bdb;padding:4px 8px;border-radius:999px;font-size:12px;margin-left:6px}
+.travel-map{margin-top:12px;height:260px;border-radius:10px;border:1px solid #e0e0e0;overflow:hidden;background:#fff}
+.travel-import-mini{position:static;font-size:11px;padding:6px 10px;border-radius:999px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="container">
+<h1>Калькулятор стоимости мастер-классов</h1>
+<div class="form-group">
+<label for="search">Выберите мастер-класс</label>
+<div class="search-wrapper">
+<input type="text" id="search" placeholder="Введите название или начните вводить..." autocomplete="off">
+<div class="dropdown-list" id="dropdown"></div>
+  
+</div>
+<div class="error" id="searchError">Пожалуйста, выберите мастер-класс из списка</div>
+  
+</div>
+<div class="form-group">
+<label for="quantity">Количество участников</label>
+<input type="number" id="quantity" placeholder="Введите количество" min="1">
+<div class="error" id="quantityError">Количество должно быть больше 0</div>
+</div>
+<div class="toggle-group">
+<div class="toggle-switch" id="toggleSwitch">
+<div class="toggle-knob"></div>
+</div>
+<span class="toggle-label">Наценка 20%</span>
+</div>
+<div class="toggle-group">
+<div class="toggle-switch" id="invoiceToggle">
+<div class="toggle-knob"></div>
+</div>
+<span class="toggle-label">Оплата по счету (+10%)</span>
+</div>
+<div class="button-group">
+<button class="btn-calculate" id="calculateBtn">Рассчитать</button>
+<button class="btn-reset" id="resetBtn">Очистить</button>
+</div>
+<div class="result" id="result">
+<div class="result-title" id="resultTitle"></div>
+<a class="result-link" id="resultLink" target="_blank"></a>
+<div class="result-details" id="resultDetails"></div>
+<div class="result-price" id="resultPrice"></div>
+<button class="btn-copy" id="copyBtn">Копировать результат</button>
+<div class="copy-success" id="copySuccess">Скопировано в буфер обмена!</div>
+</div>
+</div>
+</div>
+<script>
+const MASTER_CLASSES=[{"name":"Мастер-класс Брелоки из кожи","url":"https://alexgrim.ru/master-klass-breloki-iz-kozhi/","basePrice":12500},{"name":"Мастер-класс Декорирование варежек","url":"https://alexgrim.ru/master-klass-dekorirovanie-varezhek/","basePrice":12500},{"name":"Мастер-классы для учеников 10-ого класса","url":"https://alexgrim.ru/master-klassy-dlya-detej/10-klass/","basePrice":9500},{"name":"Мастер-классы для учащихся в 11-ом классе","url":"https://alexgrim.ru/master-klassy-dlya-detej/11-klass/","basePrice":11500},{"name":"Мастер-классы для детей 1 класса","url":"https://alexgrim.ru/master-klassy-dlya-detej/1-klass/","basePrice":7500},{"name":"Мастер-классы для 2 класса","url":"https://alexgrim.ru/master-klassy-dlya-detej/2-klass/","basePrice":7500},{"name":"Мастер-класс по рисованию 3д ручкой","url":"https://alexgrim.ru/master-klassy-dlya-detej/3d-ruchka/","basePrice":11500},{"name":"Мастер-классы для 5 класса","url":"https://alexgrim.ru/master-klassy-dlya-detej/5-klass/","basePrice":7500},{"name":"Мастер-классы для 6 класса","url":"https://alexgrim.ru/master-klassy-dlya-detej/6-klass/","basePrice":7500},{"name":"Мастер-классы для учеников 7-класса","url":"https://alexgrim.ru/master-klassy-dlya-detej/7-klass/","basePrice":7500},{"name":"Мастер-классы для 8 класса","url":"https://alexgrim.ru/master-klassy-dlya-detej/8-klass/","basePrice":7500},{"name":"Мастер-классы для детей 8 лет","url":"https://alexgrim.ru/master-klassy-dlya-detej/8-let/","basePrice":7500},{"name":"Мастер-классы для 9 класса подросткам","url":"https://alexgrim.ru/master-klassy-dlya-detej/9-klass/","basePrice":7500},{"name":"Мастер-классы для детей 9 лет","url":"https://alexgrim.ru/master-klassy-dlya-detej/9-let/","basePrice":7500},{"name":"Антистресс игрушки для рук","url":"https://alexgrim.ru/master-klassy-dlya-detej/antistress-igrushki-dlya-ruk/","basePrice":9500},{"name":"Мастер-класс по приготовлению мороженого","url":"https://alexgrim.ru/master-klassy-dlya-detej/azotnoe-morozhenoe/","basePrice":18500},{"name":"Блокноты в мягкой обложке","url":"https://alexgrim.ru/master-klassy-dlya-detej/bloknoty-v-myagkoj-oblozhke/","basePrice":12500},{"name":"Мастер-класс по плетению браслетов из резиночек","url":"https://alexgrim.ru/master-klassy-dlya-detej/braslety-iz-rezinok/","basePrice":9500},{"name":"Брелоки из полимерной глины","url":"https://alexgrim.ru/master-klassy-dlya-detej/breloki-iz-polimernoj-gliny/","basePrice":12500},{"name":"Мастер-класс мини-валенки","url":"https://alexgrim.ru/master-klassy-dlya-detej/dekor-mini-valenok/","basePrice":10500},{"name":"Мастер-класс по созданию флорариума","url":"https://alexgrim.ru/master-klassy-dlya-detej/florarium/","basePrice":14000},{"name":"Мастер-класс по изготовлению игрушек из лыка","url":"https://alexgrim.ru/master-klassy-dlya-detej/igrushki-iz-lyka/","basePrice":9500},{"name":"Детский мастер-класс Игрушки из носков","url":"https://alexgrim.ru/master-klassy-dlya-detej/igrushki-iz-noskov/","basePrice":9500},{"name":"Мастер-класс по изготовлению самолетика-планера","url":"https://alexgrim.ru/master-klassy-dlya-detej/izgotovlenie-samoletika-planera/","basePrice":18500},{"name":"Мастер-класс куколки из шерсти","url":"https://alexgrim.ru/master-klassy-dlya-detej/kukolki-iz-shersti/","basePrice":11500},{"name":"Мастер-класс по лепке из глины","url":"https://alexgrim.ru/master-klassy-dlya-detej/lepka-iz-gliny/","basePrice":9500},{"name":"Мастер-класс ложки из полимерной глины","url":"https://alexgrim.ru/master-klassy-dlya-detej/lozhki-iz-polimernoj-gliny/","basePrice":12500},{"name":"Мастер-класс по изготовлению ловца снов","url":"https://alexgrim.ru/master-klassy-dlya-detej/master-klass-lovec-snov/","basePrice":10500},{"name":"Мастер-классы город мастеров по профессиям","url":"https://alexgrim.ru/master-klassy-dlya-detej/master-klass-professii/","basePrice":7500},{"name":"Мастер-классы для детей 3 лет","url":"https://alexgrim.ru/master-klassy-dlya-detej/master-klassy-dlya-detej-3-let/","basePrice":7500},{"name":"Медицинский мастер-класс для детей","url":"https://alexgrim.ru/master-klassy-dlya-detej/medicinskiy/","basePrice":23500},{"name":"Мастер-класс по строительству из мини-кирпичиков","url":"https://alexgrim.ru/master-klassy-dlya-detej/mini-kirpichiki/","basePrice":14000},{"name":"Мастер класс мягкие брелоки","url":"https://alexgrim.ru/master-klassy-dlya-detej/myagkie-breloki/","basePrice":10500},{"name":"Онлайн мастер-классы","url":"https://alexgrim.ru/master-klassy-dlya-detej/onlajn-master-klassy/","basePrice":1200},{"name":"Мастер-классы для детей от года","url":"https://alexgrim.ru/master-klassy-dlya-detej/ot-1-goda/","basePrice":7500},{"name":"Мастер-классы для детей 2 лет","url":"https://alexgrim.ru/master-klassy-dlya-detej/ot-2-let/","basePrice":7500},{"name":"Мастер-классы для детей 4 лет","url":"https://alexgrim.ru/master-klassy-dlya-detej/ot-4-let/","basePrice":7500},{"name":"Птичка из ниток своими руками","url":"https://alexgrim.ru/master-klassy-dlya-detej/ptichka-iz-nitok-svoimi-rukami/","basePrice":9500},{"name":"Роспись цветочных горшков","url":"https://alexgrim.ru/master-klassy-dlya-detej/rospis-cvetochnyh-gorshkov/","basePrice":11500},{"name":"Мастер-класс по росписи деревянных игрушек","url":"https://alexgrim.ru/master-klassy-dlya-detej/rospis-derevyannyh-igrushek/","basePrice":10500},{"name":"Роспись деревянных лошадок","url":"https://alexgrim.ru/master-klassy-dlya-detej/rospis-derevyannyh-loshadok/","basePrice":11500},{"name":"Мастер-класс роспись картонных гитар","url":"https://alexgrim.ru/master-klassy-dlya-detej/rospis-kartonnyh-gitar/","basePrice":10500},{"name":"Роспись кед","url":"https://alexgrim.ru/master-klassy-dlya-detej/rospis-ked/","basePrice":18500},{"name":"Роспись колокольчика","url":"https://alexgrim.ru/master-klassy-dlya-detej/rospis-kolokolchika/","basePrice":10500},{"name":"Роспись свистулек","url":"https://alexgrim.ru/master-klassy-dlya-detej/rospis-svistulek/","basePrice":11500},{"name":"Шлемы космонавтов","url":"https://alexgrim.ru/master-klassy-dlya-detej/shlemy-kosmonavtov/","basePrice":11500},{"name":"Мастер-класс Состаренная баночка с фигуркой","url":"https://alexgrim.ru/master-klassy-dlya-detej/sostarennaya-banochka-s-figurkoj/","basePrice":14000},{"name":"Создание фонариков супергероев","url":"https://alexgrim.ru/master-klassy-dlya-detej/sozdanie-fonarikov-supergeroev/","basePrice":11500},{"name":"Создание корон, мечей и щитов","url":"https://alexgrim.ru/master-klassy-dlya-detej/sozdanie-koron-mechej-i-shchitov/","basePrice":11500},{"name":"Мастер-класс по мультипликации","url":"https://alexgrim.ru/master-klassy-dlya-detej/sozdanie-multfilma/","basePrice":18500},{"name":"Создание светового меча","url":"https://alexgrim.ru/master-klassy-dlya-detej/sozdanie-svetovogo-mecha/","basePrice":11500},{"name":"Мастер-класс травянчики для детей","url":"https://alexgrim.ru/master-klassy-dlya-detej/travyanchiki/","basePrice":9500},{"name":"Мастер-класс Волшебные палочки","url":"https://alexgrim.ru/master-klassy-dlya-detej/volshebnye-palochki/","basePrice":10500},{"name":"Воздушный пластилин — мастер-класс по лепке","url":"https://alexgrim.ru/master-klassy-dlya-detej/vozdushnyj-plastilin/","basePrice":9500},{"name":"Мастер-класс по профессии палеонтолог","url":"https://alexgrim.ru/master-klassy-dlya-detej/yunyj-paleontolog/","basePrice":45000},{"name":"Мастер-класс Зелье с сухоцветами","url":"https://alexgrim.ru/master-klassy-dlya-detej/zele-s-suhocvetami/","basePrice":14000},{"name":"Изготовление брутальных браслетов из кожи","url":"https://alexgrim.ru/master-klassy-dlya-muzhchin-23-fevralya/izgotovlenie-brutalnyh-brasletov-iz-kozhi/","basePrice":14000},{"name":"Мастер-класс по граффити","url":"https://alexgrim.ru/master-klassy-dlya-podrostkov/master-klass-po-grafiti/","basePrice":32000},{"name":"Мастер-класс по кручению сигары","url":"https://alexgrim.ru/master-klassy-dlya-vzroslyh/master-klass-kruchenie-sigari/","basePrice":35000},{"name":"Мастер-класс по росписи касок","url":"https://alexgrim.ru/master-klassy-dlya-vzroslyh/rospis-kasok/","basePrice":11500},{"name":"Мастер-класс Выпечка блинов на мероприятии","url":"https://alexgrim.ru/master-klassy-na-korporativ/bliny/","basePrice":17500},{"name":"Браслет из вощеного жгута","url":"https://alexgrim.ru/master-klassy-na-korporativ/brasleti-iz-voshenogo-zguta/","basePrice":10500},{"name":"Мастер-класс букет в шляпной коробке","url":"https://alexgrim.ru/master-klassy-na-korporativ/buket-v-shlyapnoj-korobke/","basePrice":28000},{"name":"Мастер-класс бутылка с пожеланиями","url":"https://alexgrim.ru/master-klassy-na-korporativ/butylochki-s-pozhelaniyami/","basePrice":10500},{"name":"Цветы и макаруны в коробке","url":"https://alexgrim.ru/master-klassy-na-korporativ/cvety-i-makaruny-v-korobke/","basePrice":22000},{"name":"Мастер-класс цветы из фоамирана","url":"https://alexgrim.ru/master-klassy-na-korporativ/cvety-iz-foamirana/","basePrice":11500},{"name":"Мастер-класс декор новогодних подсвечников","url":"https://alexgrim.ru/master-klassy-na-korporativ/dekor-novogodnih-podsvechnikov/","basePrice":11500},{"name":"Мастер-класс по декупажу бутылок шампанского","url":"https://alexgrim.ru/master-klassy-na-korporativ/dekupazh-butylki-shampanskogo/","basePrice":12500},{"name":"Мастер-класс Декупаж фляжки","url":"https://alexgrim.ru/master-klassy-na-korporativ/dekupazh-flyazhki/","basePrice":12500},{"name":"Флип флоп картины","url":"https://alexgrim.ru/master-klassy-na-korporativ/flip-flop-kartiny/","basePrice":16500},{"name":"Мастер-класс по созданию галстуков-бабочек","url":"https://alexgrim.ru/master-klassy-na-korporativ/galstuki-babochki/","basePrice":10500},{"name":"Гигантское плетение руками","url":"https://alexgrim.ru/master-klassy-na-korporativ/gigantskoe-pletenie-rukami/","basePrice":26000},{"name":"Мастер-класс Карнавальные маски из фетра","url":"https://alexgrim.ru/master-klassy-na-korporativ/karnavalnye-maski-iz-fetra/","basePrice":10500},{"name":"Мастер-класс Картина акрилом","url":"https://alexgrim.ru/master-klassy-na-korporativ/kartina-akrilom/","basePrice":18500},{"name":"Мастер-класс по латте-арту","url":"https://alexgrim.ru/master-klassy-na-korporativ/latte-art/","basePrice":26000},{"name":"Мастер-класс лепка из марципана","url":"https://alexgrim.ru/master-klassy-na-korporativ/lepka-iz-marcipana/","basePrice":9500},{"name":"Мастер-класс по овершейкам","url":"https://alexgrim.ru/master-klassy-na-korporativ/master-class-overshakes/","basePrice":16500},{"name":"Мастер-класс по китайской каллиграфии","url":"https://alexgrim.ru/master-klassy-na-korporativ/master-klass-po-kalligrafii/","basePrice":17500},{"name":"Мэджик бокс своими руками","url":"https://alexgrim.ru/master-klassy-na-korporativ/mehdzhik-boks-svoimi-rukami/","basePrice":12500},{"name":"Мастер-класс Обложки на паспорт из фетра","url":"https://alexgrim.ru/master-klassy-na-korporativ/oblojki-na-pasport-iz-fetra/","basePrice":10500},{"name":"Мастер-класс по декорированию подсвечников в стиле декупаж","url":"https://alexgrim.ru/master-klassy-na-korporativ/podsvechniki-dekupazh/","basePrice":10500},{"name":"Мастер-класс Повязка на голову","url":"https://alexgrim.ru/master-klassy-na-korporativ/povyazka-na-golovu/","basePrice":9500},{"name":"Мастер-класс Приготовление глинтвейна","url":"https://alexgrim.ru/master-klassy-na-korporativ/prigotovlenie-glintveyna/","basePrice":12500},{"name":"Мастер-класс по рисованию вином в Москве","url":"https://alexgrim.ru/master-klassy-na-korporativ/risovanie-vinom-master-klass/","basePrice":10500},{"name":"Роспись бандан","url":"https://alexgrim.ru/master-klassy-na-korporativ/rospis-bandan/","basePrice":11500},{"name":"Роспись бирдекеля подставки под пиво","url":"https://alexgrim.ru/master-klassy-na-korporativ/rospis-birdekelya/","basePrice":9500},{"name":"Роспись чехлов для телефона","url":"https://alexgrim.ru/master-klassy-na-korporativ/rospis-chekhlov-dlya-telefona/","basePrice":12500},{"name":"Роспись галстуков","url":"https://alexgrim.ru/master-klassy-na-korporativ/rospis-galstukov/","basePrice":10500},{"name":"Роспись китайских зонтиков","url":"https://alexgrim.ru/master-klassy-na-korporativ/rospis-kitajskih-zontikov/","basePrice":11500},{"name":"Роспись лавок","url":"https://alexgrim.ru/master-klassy-na-korporativ/rospis-lavok/","basePrice":26000},{"name":"Роспись обложки для паспорта","url":"https://alexgrim.ru/master-klassy-na-korporativ/rospis-oblozhki-dlya-pasporta/","basePrice":11500},{"name":"Мастер-класс по росписи пивных кружек","url":"https://alexgrim.ru/master-klassy-na-korporativ/rospis-pivnyh-kruzhek/","basePrice":11500},{"name":"Сухие духи своими руками","url":"https://alexgrim.ru/master-klassy-na-korporativ/suhie-duhi-svoimi-rukami/","basePrice":14000},{"name":"Вазы стринг арт","url":"https://alexgrim.ru/master-klassy-na-korporativ/vaza-string-art/","basePrice":16500},{"name":"Мастер-класс по морским узлам","url":"https://alexgrim.ru/master-klassy-na-korporativ/vyazanie-morskih-uzlov/","basePrice":11500},{"name":"Мастер-класс по завязыванию галстуков","url":"https://alexgrim.ru/master-klassy-na-korporativ/zavyazyvanie-galstukov/","basePrice":10500},{"name":"Создание аффирмационных свечей","url":"https://alexgrim.ru/master-klassy-v-moskve/affirmacionnye-svechi/","basePrice":15000},{"name":"Мастер-класс по аквагриму","url":"https://alexgrim.ru/master-klassy-v-moskve/akvagrim/","basePrice":12500},{"name":"Мастер-класс Акварельные открытки","url":"https://alexgrim.ru/master-klassy-v-moskve/akvarelnye-otkrytki/","basePrice":7500},{"name":"Мастер-класс Английская чайная церемония","url":"https://alexgrim.ru/master-klassy-v-moskve/anglijskaya-chajnaya-ceremoniya/","basePrice":37500},{"name":"Мастер-класс по созданию аквариума","url":"https://alexgrim.ru/master-klassy-v-moskve/aquarium-master-class/","basePrice":18500},{"name":"Аромадиагностика","url":"https://alexgrim.ru/master-klassy-v-moskve/aromadiagnostika/","basePrice":77000},{"name":"Мастер-класс Аромадиффузор в машину","url":"https://alexgrim.ru/master-klassy-v-moskve/aromadiffuzor-v-mashinu/","basePrice":14000},{"name":"Мастер-класс по созданию ароматического диффузора для дома","url":"https://alexgrim.ru/master-klassy-v-moskve/aromaticheskij-diffuzor-dlya-doma/","basePrice":17500},{"name":"Мастер-класс Ароматизаторы из фетра","url":"https://alexgrim.ru/master-klassy-v-moskve/aromatizator-iz-fetra/","basePrice":10500},{"name":"Мастер-класс Арт Дартс","url":"https://alexgrim.ru/master-klassy-v-moskve/art-darts/","basePrice":14000},{"name":"Арт вечера","url":"https://alexgrim.ru/master-klassy-v-moskve/art-vechera/","basePrice":18500},{"name":"Арт встречи","url":"https://alexgrim.ru/master-klassy-v-moskve/art-vstrechi/","basePrice":18500},{"name":"Бабл ти","url":"https://alexgrim.ru/master-klassy-v-moskve/babl-ti/","basePrice":14000},{"name":"Мастер класс бальзам для губ","url":"https://alexgrim.ru/master-klassy-v-moskve/balzam-dlya-gub/","basePrice":14000},{"name":"Мастер класс бальзам для тела","url":"https://alexgrim.ru/master-klassy-v-moskve/balzam-dlya-tela/","basePrice":16500},{"name":"Кулинарный мастер-класс по барбекю","url":"https://alexgrim.ru/master-klassy-v-moskve/barbekyu/","basePrice":45000},{"name":"Мастер-класс по изготовлению и скрапбукингу блокнотов","url":"https://alexgrim.ru/master-klassy-v-moskve/bloknoty/","basePrice":14000},{"name":"Мастер-класс бомбочки для ванной","url":"https://alexgrim.ru/master-klassy-v-moskve/bombochki-dlya-vannoj-master-klass/","basePrice":12500},{"name":"Браслет на кроссовки","url":"https://alexgrim.ru/master-klassy-v-moskve/braslet-na-krossovki/","basePrice":12500},{"name":"Мастер-класс Браслеты из букв","url":"https://alexgrim.ru/master-klassy-v-moskve/braslety-iz-bukv/","basePrice":12500},{"name":"Мастер-класс Браслеты с шармами","url":"https://alexgrim.ru/master-klassy-v-moskve/braslety-s-sharmami/","basePrice":16500},{"name":"Брелок BearBrick","url":"https://alexgrim.ru/master-klassy-v-moskve/brelok-bearbrick/","basePrice":11500},{"name":"Мастер-Класс «Брелок из ниток мулине»","url":"https://alexgrim.ru/master-klassy-v-moskve/brelok-iz-nitok-muline/","basePrice":7500},{"name":"Заказать мастер-класс брелоки из пробок","url":"https://alexgrim.ru/master-klassy-v-moskve/brelok-iz-probok/","basePrice":8500},{"name":"Брелок на сумку “морской узел”","url":"https://alexgrim.ru/master-klassy-v-moskve/brelok-na-sumku-morskoj-uzel/","basePrice":14000},{"name":"Мастер-класс Создание брошей из фетра","url":"https://alexgrim.ru/master-klassy-v-moskve/brosh-iz-fetra/","basePrice":9500},{"name":"Мастер-класс букет из конфет","url":"https://alexgrim.ru/master-klassy-v-moskve/buket-iz-konfet/","basePrice":12500},{"name":"Мастер-класс Букет из мыльных роз","url":"https://alexgrim.ru/master-klassy-v-moskve/buket-iz-mylnyh-roz/","basePrice":14000},{"name":"Арт-перфоманс Бумажная Мода","url":"https://alexgrim.ru/master-klassy-v-moskve/bumazhnaya-moda/","basePrice":25000},{"name":"Мастер-класс по созданию картонного города","url":"https://alexgrim.ru/master-klassy-v-moskve/carton-city/","basePrice":130000},{"name":"Мастер-класс по центробежному рисованию","url":"https://alexgrim.ru/master-klassy-v-moskve/centrobezhnoe-risovanie/","basePrice":16500},{"name":"Чайные бомбочки","url":"https://alexgrim.ru/master-klassy-v-moskve/chajnye-bombochki/","basePrice":17500},{"name":"Чайные пакетики для ванны","url":"https://alexgrim.ru/master-klassy-v-moskve/chajnye-paketiki-dlya-vanny/","basePrice":12500},{"name":"Мастер-класс по чаю","url":"https://alexgrim.ru/master-klassy-v-moskve/chajnyj-kupazh/","basePrice":32000},{"name":"Мастер-класс по чеканке монет","url":"https://alexgrim.ru/master-klassy-v-moskve/chekanka-monet/","basePrice":19000},{"name":"Чехол из эпоксидной смолы","url":"https://alexgrim.ru/master-klassy-v-moskve/chekhol-iz-ehpoksidnoj-smoly/","basePrice":20000},{"name":"Чокер из бисера на шею","url":"https://alexgrim.ru/master-klassy-v-moskve/choker-iz-bisera-na-sheyu/","basePrice":14000},{"name":"Мастер-класс цветочные бутоньерки и браслеты","url":"https://alexgrim.ru/master-klassy-v-moskve/cvetochnye-butonerki-i-braslety/","basePrice":14000},{"name":"Мастер-класс цветочные корзинки","url":"https://alexgrim.ru/master-klassy-v-moskve/cvetochnye-korzinki/","basePrice":26000},{"name":"Мастер-класс цветок в мини колбе","url":"https://alexgrim.ru/master-klassy-v-moskve/cvetok-v-kolbe/","basePrice":12500},{"name":"Посадка цветов в деревянные ящики","url":"https://alexgrim.ru/master-klassy-v-moskve/cvety-v-derevyannyh-yashchikah/","basePrice":26000},{"name":"Мастер-класс Декорирование футболки","url":"https://alexgrim.ru/master-klassy-v-moskve/decorirovanie-futbolki/","basePrice":12500},{"name":"Мастер-класс Декор венков из искусственной ели","url":"https://alexgrim.ru/master-klassy-v-moskve/decor-venkov-iz-iskusstvennoy-eli/","basePrice":14000},{"name":"Декопатч вечного календаря","url":"https://alexgrim.ru/master-klassy-v-moskve/dekopatch-vechnogo-kalendarya/","basePrice":7500},{"name":"Декоративная черная ваза с золотом","url":"https://alexgrim.ru/master-klassy-v-moskve/dekorativnaya-chernaya-vaza-s-zolotom/","basePrice":38000},{"name":"Декоративные соленья","url":"https://alexgrim.ru/master-klassy-v-moskve/dekorativnye-solenya/","basePrice":12500},{"name":"Мастер-класс по декорированию бейсболок","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-bejsbolok/","basePrice":12500},{"name":"Мастер-класс по Декору венка на дверь","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-dveri/","basePrice":12500},{"name":"Декор елочного шара атласными лентами","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-elochnogo-shara-atlasnymi-lentami/","basePrice":12500},{"name":"Мастер-класс Декор галстуков","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-galstukov/","basePrice":11500},{"name":"Мастер-класс декорирование рамок для фотографий","url":"https://alexgrim.ru/master-klassy-v-moskve/dekorirovanie-ramok-dlya-fotografiy/","basePrice":11500},{"name":"Мастер-класс по Декору леек","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-leek/","basePrice":14000},{"name":"Мастер-класс декор менажницы эпоксидной смолой","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-menazhniczy-epoksidnoj-smoloj/","basePrice":32000},{"name":"Мастер-класс декор нунчаков","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-nunchakov/","basePrice":14000},{"name":"Декор ободков","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-obodkov/","basePrice":17500},{"name":"Декор прозрачного елочного шара","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-prozrachnogo-elochnogo-shara/","basePrice":12500},{"name":"Мастер-класс по декору рамок","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-ramok/","basePrice":11500},{"name":"Мастер-класс Декор термосов и термокружек","url":"https://alexgrim.ru/master-klassy-v-moskve/dekor-termosov-i-termokruzhek/","basePrice":14000},{"name":"Мастер-класс по декупажу","url":"https://alexgrim.ru/master-klassy-v-moskve/dekupazh/","basePrice":10500},{"name":"Мастер-класс Создание и декорирование настенных часов","url":"https://alexgrim.ru/master-klassy-v-moskve/dekupazh-chasov/","basePrice":12500},{"name":"Мастер-класс Декупаж и роспись ключниц","url":"https://alexgrim.ru/master-klassy-v-moskve/dekupazh-i-rospis-klyuchnic/","basePrice":12500},{"name":"Мастер класс по декупажу свечей","url":"https://alexgrim.ru/master-klassy-v-moskve/dekupazh-svechi/","basePrice":12500},{"name":"Мастер-класс Декупаж в русском стиле","url":"https://alexgrim.ru/master-klassy-v-moskve/dekupazh-v-russkom-stile/","basePrice":10500},{"name":"Мастер класс по приготовлению лимонада","url":"https://alexgrim.ru/master-klassy-v-moskve/delaem-limonad/","basePrice":11500},{"name":"Мастер-класс по дубайскому шоколаду","url":"https://alexgrim.ru/master-klassy-v-moskve/dubajskij-shokolad/","basePrice":28000},{"name":"Мастер-класс по декупажу пасхальных яиц","url":"https://alexgrim.ru/master-klassy-v-moskve/easter-decoupage/","basePrice":11500},{"name":"Мастер-класс по росписи пасхальных яиц","url":"https://alexgrim.ru/master-klassy-v-moskve/easter-eggs-rospis/","basePrice":10500},{"name":"Мастер-класс по эбру","url":"https://alexgrim.ru/master-klassy-v-moskve/ebru-master-klass/","basePrice":12500},{"name":"Елочка из фоамирана","url":"https://alexgrim.ru/master-klassy-v-moskve/elochka-iz-foamirana/","basePrice":11500},{"name":"Елочка из шишек","url":"https://alexgrim.ru/master-klassy-v-moskve/elochka-iz-shishek/","basePrice":14000},{"name":"Елочка на спиле","url":"https://alexgrim.ru/master-klassy-v-moskve/elochka-na-spile/","basePrice":9500},{"name":"Мастер-класс по изготовлению елочек в стиле Hygge","url":"https://alexgrim.ru/master-klassy-v-moskve/elochki-v-stile-hygge/","basePrice":10500},{"name":"Мастер-класс Елочные шары из полусфер с брендированием","url":"https://alexgrim.ru/master-klassy-v-moskve/elochnye-shary-iz-polusfer/","basePrice":11500},{"name":"Мастер-класс Создание фамильных гербов из картона","url":"https://alexgrim.ru/master-klassy-v-moskve/familnie-gerbi/","basePrice":18500},{"name":"Мастер-класс по флористике","url":"https://alexgrim.ru/master-klassy-v-moskve/floristika/","basePrice":25000},{"name":"Мастер-класс фотография на телефон","url":"https://alexgrim.ru/master-klassy-v-moskve/fotografiya-na-telefon/","basePrice":12500},{"name":"Футболки Тай-дай","url":"https://alexgrim.ru/master-klassy-v-moskve/futbolki-taj-daj/","basePrice":14000},{"name":"Мастер-класс по изготовлению гелевых свечей","url":"https://alexgrim.ru/master-klassy-v-moskve/gelevye-svechi/","basePrice":11500},{"name":"Мастер-класс Гигантские оригами","url":"https://alexgrim.ru/master-klassy-v-moskve/giantskie-origami/","basePrice":30000},{"name":"Мастер класс handgum жвачка для рук","url":"https://alexgrim.ru/master-klassy-v-moskve/hand-gum/","basePrice":10500},{"name":"Мастер-класс по созданию дергунчиков","url":"https://alexgrim.ru/master-klassy-v-moskve/igrushka-dergunchik/","basePrice":10500},{"name":"Мастер-класс по созданию игрушек из деревянных палочек","url":"https://alexgrim.ru/master-klassy-v-moskve/igrushki-iz-derevyannyh-palochek/","basePrice":7500},{"name":"Мастер-класс по изготовлению игрушек из фетра","url":"https://alexgrim.ru/master-klassy-v-moskve/igrushki-iz-fetra/","basePrice":9500},{"name":"Мастер-класс Игрушки из картона","url":"https://alexgrim.ru/master-klassy-v-moskve/igrushki-iz-kartona/","basePrice":9500},{"name":"Мастер-класс игрушки из лоскутков","url":"https://alexgrim.ru/master-klassy-v-moskve/igrushki-iz-loskutov/","basePrice":9500},{"name":"Игрушки из мешковины","url":"https://alexgrim.ru/master-klassy-v-moskve/igrushki-iz-meshkoviny/","basePrice":10500},{"name":"Мастер-класс Игрушки из прищепок","url":"https://alexgrim.ru/master-klassy-v-moskve/igrushki-iz-prishchepok/","basePrice":7500},{"name":"Мастер-класс именные браслеты","url":"https://alexgrim.ru/master-klassy-v-moskve/imennye-braslety-na-ruku/","basePrice":14000},{"name":"Интерьерная картина с ракушками","url":"https://alexgrim.ru/master-klassy-v-moskve/interernaya-kartina-s-rakushkami/","basePrice":14000},{"name":"Мастер-класс интерьерные слова","url":"https://alexgrim.ru/master-klassy-v-moskve/interiernie-slova/","basePrice":14000},{"name":"Мастер-класс «Изделия из синельной проволоки»","url":"https://alexgrim.ru/master-klassy-v-moskve/izdeliya-iz-sinelnoj-provoloki/","basePrice":8500},{"name":"Мастер-класс по изготовлению ароматного саше","url":"https://alexgrim.ru/master-klassy-v-moskve/izgotovlenie-aromatnogo-sashe/","basePrice":11500},{"name":"Мастер-класс Карамельные леденцы","url":"https://alexgrim.ru/master-klassy-v-moskve/izgotovlenie-karamelnyh-ledencov/","basePrice":10500},{"name":"Изготовление куличей","url":"https://alexgrim.ru/master-klassy-v-moskve/izgotovlenie-kulichej/","basePrice":36000},{"name":"Мастер-класс Изготовление оливкового масла","url":"https://alexgrim.ru/master-klassy-v-moskve/izgotovlenie-olivkovogo-masla/","basePrice":14000},{"name":"Мастер-класс по изготовлению шоколадных конфет","url":"https://alexgrim.ru/master-klassy-v-moskve/izgotovlenie-shokoladnyh-konfet/","basePrice":14000},{"name":"Мастер-класс по созданию оберега","url":"https://alexgrim.ru/master-klassy-v-moskve/izgotovleniya-oberega/","basePrice":10500},{"name":"Мастер-класс по рисованию на холсте","url":"https://alexgrim.ru/master-klassy-v-moskve/jivopis-na-holstah/","basePrice":18500},{"name":"Капхолдер из бусин: сумка для стакана","url":"https://alexgrim.ru/master-klassy-v-moskve/kapholder-iz-busin/","basePrice":12500},{"name":"Мастер-класс капитошки","url":"https://alexgrim.ru/master-klassy-v-moskve/kapitoshka/","basePrice":9500},{"name":"Карнавальная маска","url":"https://alexgrim.ru/master-klassy-v-moskve/karnavalnaya-maska/","basePrice":14000},{"name":"Мастер-класс по составлению карты желаний","url":"https://alexgrim.ru/master-klassy-v-moskve/karta-zhelanij/","basePrice":12500},{"name":"Мастер-класс Картина из фатина","url":"https://alexgrim.ru/master-klassy-v-moskve/kartina-iz-fatina/","basePrice":11500},{"name":"Мастер-класс Картина из гвоздей и ниток","url":"https://alexgrim.ru/master-klassy-v-moskve/kartina-iz-gvozdej-i-nitok/","basePrice":11500},{"name":"Картина из мозаики своими руками","url":"https://alexgrim.ru/master-klassy-v-moskve/kartina-iz-mozaiki-svoimi-rukami/","basePrice":14000},{"name":"Мастер-класс Картина из шерсти","url":"https://alexgrim.ru/master-klassy-v-moskve/kartina-iz-shersti/","basePrice":10500},{"name":"Картина листьями","url":"https://alexgrim.ru/master-klassy-v-moskve/kartina-listyami/","basePrice":9500},{"name":"Флюид арт мастер класс в Москве","url":"https://alexgrim.ru/master-klassy-v-moskve/kartiny-flyuid-art/","basePrice":18500},{"name":"Мастер-класс по рисованию эпоксидной смолой","url":"https://alexgrim.ru/master-klassy-v-moskve/kartiny-iz-ehpoksidnoj-smoly/","basePrice":32000},{"name":"Мастер-класс по созданию картины из природных материалов","url":"https://alexgrim.ru/master-klassy-v-moskve/kartiny-iz-prirodnogo-materiala/","basePrice":9500},{"name":"Мастер-класс по карвингу","url":"https://alexgrim.ru/master-klassy-v-moskve/karving/","basePrice":17500},{"name":"Кастомизация одежды и аксессуаров термонаклейками","url":"https://alexgrim.ru/master-klassy-v-moskve/kastomizaciya-odezhdy-termonaklejkami/","basePrice":12500},{"name":"Мастер-класс по кейк-попсам","url":"https://alexgrim.ru/master-klassy-v-moskve/keyk-popsy/","basePrice":12500},{"name":"Мастер-класс Китайская чайная церемония","url":"https://alexgrim.ru/master-klassy-v-moskve/kitajskaya-chajnaya-ceremoniya/","basePrice":37500},{"name":"Мастер-классы Браслеты из кожи","url":"https://alexgrim.ru/master-klassy-v-moskve/kojanie-brasleti/","basePrice":12500},{"name":"Мастер-класс Арт-коллаж из журнальных вырезок","url":"https://alexgrim.ru/master-klassy-v-moskve/kollazh-iz-zhurnalnyh-vyrezok/","basePrice":11500},{"name":"Композиция “Полянка в лесу”","url":"https://alexgrim.ru/master-klassy-v-moskve/kompoziciya-polyanka-v-lesu/","basePrice":12500},{"name":"Композиция в ящике с хлопком","url":"https://alexgrim.ru/master-klassy-v-moskve/kompoziciya-v-yashchike-s-hlopkom/","basePrice":25000},{"name":"Мастер-класс конструирование из картона своими руками","url":"https://alexgrim.ru/master-klassy-v-moskve/konstruirovanie-iz-kartona-svoimi-rukami/","basePrice":10500},{"name":"Мастер-класс кормушки для птиц","url":"https://alexgrim.ru/master-klassy-v-moskve/kormushki-dlya-ptic/","basePrice":14000},{"name":"Мастер-класс Корзинки из фетра","url":"https://alexgrim.ru/master-klassy-v-moskve/korzinki-iz-fetra/","basePrice":11500},{"name":"Мастер-класс по косметике ручной работы","url":"https://alexgrim.ru/master-klassy-v-moskve/kosmetika/","basePrice":14000},{"name":"Мастер-класс космос в бутылочке","url":"https://alexgrim.ru/master-klassy-v-moskve/kosmos-v-butilochke/","basePrice":9500},{"name":"Мастер-класс Креативное панно из мешковины","url":"https://alexgrim.ru/master-klassy-v-moskve/kreativnoe-panno-iz-meshkoviny/","basePrice":12500},{"name":"Мастер-класс креативное завязывание шнурков","url":"https://alexgrim.ru/master-klassy-v-moskve/kreativnoe-zavyazyvanie-shnurkov/","basePrice":9500},{"name":"Мастер-класс по приготовлению коктейлей «Крио-бар»","url":"https://alexgrim.ru/master-klassy-v-moskve/krio-bar/","basePrice":35000},{"name":"Мастер-класс кручение самокруток","url":"https://alexgrim.ru/master-klassy-v-moskve/kruchenie-samokrutok/","basePrice":14000},{"name":"Кулон с сухоцветами на шею","url":"https://alexgrim.ru/master-klassy-v-moskve/kulon-s-suhocvetami-na-sheyu/","basePrice":17500},{"name":"Мастер-класс по квиллингу","url":"https://alexgrim.ru/master-klassy-v-moskve/kvilling/","basePrice":9500},{"name":"Мастер-класс по изготовлению магнитов","url":"https://alexgrim.ru/master-klassy-v-moskve/magnity/","basePrice":9500},{"name":"Мастер-класс по изготовлению масок для сна","url":"https://alexgrim.ru/master-klassy-v-moskve/maski-dlya-sna/","basePrice":10500},{"name":"Мастер-класс полигональные маски из картона","url":"https://alexgrim.ru/master-klassy-v-moskve/maski-iz-kartona/","basePrice":14000},{"name":"Мастер-классы на масленицу","url":"https://alexgrim.ru/master-klassy-v-moskve/maslenica/","basePrice":7500},{"name":"Мастер-класс чайная церемония","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-chajnaya-ceremoniya/","basePrice":18500},{"name":"Мастер-класс Игрушки с мозаикой","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-igrushki-s-mozaikoj/","basePrice":14000},{"name":"Мастер-класс калейдоскоп своими руками","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-kalejdoskop/","basePrice":12500},{"name":"Мастер-класс по леттерингу","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-lettering/","basePrice":12500},{"name":"Мастер-класс по медитации","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-meditaciya/","basePrice":14000},{"name":"Мастер-класс по йоге","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-po-joge/","basePrice":12500},{"name":"Мастер-класс по скрапбукингу открыток","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-po-skrapbukingu-otkrytok/","basePrice":12500},{"name":"Мастер-класс по созданию слаймов","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-po-slajmam/","basePrice":10500},{"name":"Мастер-класс по созданию духов","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-po-sozdaniyu-duhov/","basePrice":14000},{"name":"Мастер-класс по танцам","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-po-tantsam/","basePrice":12500},{"name":"Мастер-класс по росписи пряников","url":"https://alexgrim.ru/master-klassy-v-moskve/master-klass-rospis-pryanikov/","basePrice":10500},{"name":"Мастер-класс Медовый купаж","url":"https://alexgrim.ru/master-klassy-v-moskve/medovyj-kupazh/","basePrice":12500},{"name":"Мастер-класс Мини-букеты из сухоцветов","url":"https://alexgrim.ru/master-klassy-v-moskve/mini-bukety-iz-suhocvetov/","basePrice":25000},{"name":"Моделирование фигур из картона","url":"https://alexgrim.ru/master-klassy-v-moskve/modelirovanie-figur-iz-kartona/","basePrice":10500},{"name":"Музыкальный мастер-класс","url":"https://alexgrim.ru/master-klassy-v-moskve/muzykalnyj-master-klass/","basePrice":45000},{"name":"Создание мягкой игрушки","url":"https://alexgrim.ru/master-klassy-v-moskve/myagkaya-igrushka/","basePrice":16500},{"name":"Мастер-класс по мыловарению","url":"https://alexgrim.ru/master-klassy-v-moskve/mylovarenie/","basePrice":9500},{"name":"Мастер-классы на английском","url":"https://alexgrim.ru/master-klassy-v-moskve/na-anglijskom-yazyke/","basePrice":7500},{"name":"Настенное панно с макраме и фетром","url":"https://alexgrim.ru/master-klassy-v-moskve/nastennoe-panno-s-makrame/","basePrice":16500},{"name":"Недорогие мастер-классы в Москве","url":"https://alexgrim.ru/master-klassy-v-moskve/nedorogie/","basePrice":7500},{"name":"Нейрографика","url":"https://alexgrim.ru/master-klassy-v-moskve/nejrografika/","basePrice":12500},{"name":"Неоновые вывески","url":"https://alexgrim.ru/master-klassy-v-moskve/neonovye-vyveski/","basePrice":18500},{"name":"Новогоднее ароматическое саше","url":"https://alexgrim.ru/master-klassy-v-moskve/novogodnee-aromaticheskoe-sashe/","basePrice":11500},{"name":"Новогоднее флорентийское саше","url":"https://alexgrim.ru/master-klassy-v-moskve/novogodnee-florentijskoe-sashe/","basePrice":11500},{"name":"Мастер-класс Новогодние бутоньерки","url":"https://alexgrim.ru/master-klassy-v-moskve/novogodnie-butonerki/","basePrice":10500},{"name":"Новогодние соевые свечи","url":"https://alexgrim.ru/master-klassy-v-moskve/novogodnie-soevye-svechi/","basePrice":14000},{"name":"Мастер-класс Новогодний декоративный фонарик","url":"https://alexgrim.ru/master-klassy-v-moskve/novogodnij-dekorativnyj-fonarik/","basePrice":36000},{"name":"Новогодний интерьерный месяц","url":"https://alexgrim.ru/master-klassy-v-moskve/novogodnij-interernyj-mesyacz/","basePrice":12500},{"name":"Новогодняя композиция в банке","url":"https://alexgrim.ru/master-klassy-v-moskve/novogodnyaya-kompoziciya-v-banke/","basePrice":14000},{"name":"Объемная новогодняя картина","url":"https://alexgrim.ru/master-klassy-v-moskve/obemnaya-novogodnyaya-kartina/","basePrice":16500},{"name":"Мастер-класс ободки из искусственных цветов","url":"https://alexgrim.ru/master-klassy-v-moskve/obodki-iz-iskusstvennyh-cvetov/","basePrice":14000},{"name":"Мастер-класс по ободкам в стиле бохо/хиппи","url":"https://alexgrim.ru/master-klassy-v-moskve/obodki-v-stile-boho-hippi/","basePrice":11500},{"name":"Обвесы на сумку","url":"https://alexgrim.ru/master-klassy-v-moskve/obvesy-na-sumku/","basePrice":14000},{"name":"Оленьи ушки","url":"https://alexgrim.ru/master-klassy-v-moskve/oleni-ushki/","basePrice":11500},{"name":"Мастер-класс по оригами","url":"https://alexgrim.ru/master-klassy-v-moskve/origami/","basePrice":7500},{"name":"Мастер-класс Отпечатки пальчиковыми красками","url":"https://alexgrim.ru/master-klassy-v-moskve/otpechatki-palchikovymi-kraskami/","basePrice":21000},{"name":"Мастер-класс Панно денежное дерево","url":"https://alexgrim.ru/master-klassy-v-moskve/panno-denezhnoe-derevo/","basePrice":14000},{"name":"Панно Ваза с цветами","url":"https://alexgrim.ru/master-klassy-v-moskve/panno-vaza-s-czvetami/","basePrice":12500},{"name":"Мастер-класс пасхальная корзинка","url":"https://alexgrim.ru/master-klassy-v-moskve/pashalnaya-korzinka/","basePrice":11500},{"name":"Мастер-класс пасхальные открытки своими руками","url":"https://alexgrim.ru/master-klassy-v-moskve/pashalnaya-otkrytka/","basePrice":9500},{"name":"Мастер-класс пасхальный кролик","url":"https://alexgrim.ru/master-klassy-v-moskve/pashalnyj-krolik/","basePrice":9500},{"name":"Мастер-класс пасхальный венок своими руками","url":"https://alexgrim.ru/master-klassy-v-moskve/pashalnyj-venok/","basePrice":17500},{"name":"Печенье в шоколаде на палочке","url":"https://alexgrim.ru/master-klassy-v-moskve/pechene-v-shokolade-na-palochke/","basePrice":14000},{"name":"Мастер-класс пластилиновая живопись","url":"https://alexgrim.ru/master-klassy-v-moskve/plastilinovaya-zhivopis/","basePrice":9500},{"name":"Плетение авоськи","url":"https://alexgrim.ru/master-klassy-v-moskve/pletenie-avoski/","basePrice":12500},{"name":"Мастер-класс по плетению косичек","url":"https://alexgrim.ru/master-klassy-v-moskve/pletenie-kosichek/","basePrice":14000},{"name":"Мастер-класс по плетению венков","url":"https://alexgrim.ru/master-klassy-v-moskve/pletenie-venkov/","basePrice":22000},{"name":"Мастер-класс Пляжная сумка из каната","url":"https://alexgrim.ru/master-klassy-v-moskve/plyazhnaya-sumka-iz-kanata/","basePrice":17500},{"name":"Мастер-класс Подстаканники из фетра","url":"https://alexgrim.ru/master-klassy-v-moskve/podstakanniki-iz-fetra/","basePrice":9500},{"name":"Мастер-класс Подсвечник из бокала","url":"https://alexgrim.ru/master-klassy-v-moskve/podsvechnik-iz-bokala/","basePrice":11500},{"name":"Мастер-класс Подсвечник с мозаикой","url":"https://alexgrim.ru/master-klassy-v-moskve/podsvechnik-s-mozaikoj/","basePrice":12500},{"name":"Мастер-Классы для Детей 5-6 лет","url":"https://alexgrim.ru/master-klassy-v-moskve/poleznie-master-klassi-dlya-detey-5-6-let/","basePrice":7500},{"name":"Мастер-класс по полигональной росписи","url":"https://alexgrim.ru/master-klassy-v-moskve/poligonalnaya-rospis/","basePrice":9500},{"name":"Мастер-класс по приготовление смузи-боула","url":"https://alexgrim.ru/master-klassy-v-moskve/po-prigotovlenie-smuzi-boula/","basePrice":14000},{"name":"Мастер-класс по рисованию для детей","url":"https://alexgrim.ru/master-klassy-v-moskve/po-risovaniyu-dlya-detey/","basePrice":10500},{"name":"Мастер-класс по изготовлению картин из песка","url":"https://alexgrim.ru/master-klassy-v-moskve/po-risovaniyu-peskom/","basePrice":9500},{"name":"Поролоновые руки","url":"https://alexgrim.ru/master-klassy-v-moskve/porolonovye-ruki/","basePrice":10500},{"name":"Мастер-класс по посадке растений","url":"https://alexgrim.ru/master-klassy-v-moskve/posadka-rasteniy/","basePrice":17500},{"name":"Мастер-класс по созданию гелевых свечей с сухоцветами","url":"https://alexgrim.ru/master-klassy-v-moskve/po-sozdaniyu-gelevyh-svechej-s-suhoczvetami/","basePrice":14000},{"name":"Мастер-класс прически для девочек","url":"https://alexgrim.ru/master-klassy-v-moskve/pricheski-dlya-devochek/","basePrice":14000},{"name":"Мастер-класс по созданию причесок","url":"https://alexgrim.ru/master-klassy-v-moskve/pricheski-master-klass/","basePrice":16500},{"name":"Приготовление коктейлей","url":"https://alexgrim.ru/master-klassy-v-moskve/prigotovlenie-koktejlej/","basePrice":15000},{"name":"Мастер-класс по пицце для детей","url":"https://alexgrim.ru/master-klassy-v-moskve/prigotovlenie-piccy-dlya-detey/","basePrice":29000},{"name":"Мастер-класс по приготовлению плова","url":"https://alexgrim.ru/master-klassy-v-moskve/prigotovlenie-plova/","basePrice":42000},{"name":"Мастер-класс по приготовлению смеси специй в мельнице","url":"https://alexgrim.ru/master-klassy-v-moskve/prigotovlenie-smesi-specij/","basePrice":14000},{"name":"Мастер-класс по приготовлению суши и роллов","url":"https://alexgrim.ru/master-klassy-v-moskve/prigotovlenie-sushi-i-rollov/","basePrice":42000},{"name":"Пушистый елочный шар","url":"https://alexgrim.ru/master-klassy-v-moskve/pushistyj-elochnyj-shar/","basePrice":10500},{"name":"Мастер-класс радуга в бутылке","url":"https://alexgrim.ru/master-klassy-v-moskve/raduga-v-butylke-tsvetnoj-pesok/","basePrice":9500},{"name":"Мастер-класс рисование акварелью","url":"https://alexgrim.ru/master-klassy-v-moskve/risovanie-akvarelyu/","basePrice":9500},{"name":"Мастер-класс по рисованию алкогольными чернилами","url":"https://alexgrim.ru/master-klassy-v-moskve/risovanie-alkogolnymi-chernilami/","basePrice":14000},{"name":"Рисование кофе","url":"https://alexgrim.ru/master-klassy-v-moskve/risovanie-kofe/","basePrice":9500},{"name":"Рисование на пончиках","url":"https://alexgrim.ru/master-klassy-v-moskve/risovanie-na-ponchikah/","basePrice":11500},{"name":"Мастер-класс рисование пастелью","url":"https://alexgrim.ru/master-klassy-v-moskve/risovanie-pastelyu/","basePrice":9500},{"name":"Мастер-класс Рисование руками","url":"https://alexgrim.ru/master-klassy-v-moskve/risovanie-rukami/","basePrice":22000},{"name":"Мастер-класс по росписи бейсболок","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-bejsbolok/","basePrice":11500},{"name":"Роспись декоративного подноса для мелочей","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-dekorativnogo-podnosa-dlya-melochej/","basePrice":16500},{"name":"Роспись деревянного брелока","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-derevyannogo-breloka/","basePrice":9500},{"name":"Мастер-класс Роспись деревянных ложек","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-derevyannyh-lozhek/","basePrice":10500},{"name":"Роспись деревянных манекенов","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-derevyannyh-manekenov/","basePrice":14000},{"name":"Мастер-класс по росписи деревянных заготовок","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-derevyannyh-modelej/","basePrice":10500},{"name":"Мастер-класс Роспись фрисби","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-frizbi/","basePrice":9500},{"name":"Роспись футбольных мячей","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-futbolnyh-myachej/","basePrice":17500},{"name":"Мастер-класс по росписи футболок","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-futbolok/","basePrice":12500},{"name":"Роспись гипсовых фигур","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-gipsovyh-figur/","basePrice":26000},{"name":"Мастер-класс по росписи и декупажу шкатулок","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-i-dekupazh-shkatulok/","basePrice":14000},{"name":"Мастер-класс по росписи камней акриловыми красками","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-kamnej-akrilovymi-kraskami/","basePrice":9500},{"name":"Мастер-класс по росписи китайских фонариков","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-kitayskih-fonarikov/","basePrice":10500},{"name":"Мастер-класс по декору куличей","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-kulichei/","basePrice":16500},{"name":"Роспись Лабубу","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-labubu/","basePrice":18500},{"name":"Мастер-класс по росписи матрешек","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-matreshek/","basePrice":11500},{"name":"Роспись носков","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-noskov/","basePrice":12500},{"name":"Роспись пасхальных пряников","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-paskhalnyh-pryanikov/","basePrice":10500},{"name":"Мастер-класс Роспись Подносов","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-podnosov/","basePrice":17500},{"name":"Мастер-класс Роспись подушек","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-podushek/","basePrice":12500},{"name":"Мастер-класс роспись по керамике акрилом","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-po-keramike/","basePrice":11500},{"name":"Мастер-класс роспись по стеклу","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-po-steklu/","basePrice":11500},{"name":"Роспись рюкзаков","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-ryukzakov/","basePrice":17500},{"name":"Мастер-класс по декорированию скворечников","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-skvorechnikov/","basePrice":14000},{"name":"Мастер-класс по росписи по дереву","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-spilov-dereva/","basePrice":10500},{"name":"Роспись стеклянного кофейного стакана","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-steklyannogo-kofejnogo-stakana/","basePrice":14000},{"name":"Роспись стеклянных ваз","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-steklyannyh-vaz/","basePrice":12500},{"name":"Мастер-класс Роспись холщовых сумок","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-sumki-master-klass/","basePrice":11500},{"name":"Роспись трендовых мишек","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-trendovyh-mishek/","basePrice":20000},{"name":"Роспись вечного календаря","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-vechnogo-kalendarya/","basePrice":7500},{"name":"Мастер-класс по росписи вееров","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-veerov/","basePrice":11500},{"name":"Мастер-класс по росписи воздушных змеев","url":"https://alexgrim.ru/master-klassy-v-moskve/rospis-zmeev/","basePrice":14000},{"name":"Деревянная рождественская игрушка на елку","url":"https://alexgrim.ru/master-klassy-v-moskve/rozhdestvenskaya-igrushka-na-elku/","basePrice":10500},{"name":"Рождественская композиция со свечами","url":"https://alexgrim.ru/master-klassy-v-moskve/rozhdestvenskaya-kompoziciya-so-svechami/","basePrice":22000},{"name":"Рождественский венок из шишек","url":"https://alexgrim.ru/master-klassy-v-moskve/rozhdestvenskij-venok-iz-shishek/","basePrice":18500},{"name":"Мастер-класс Русская чайная церемония","url":"https://alexgrim.ru/master-klassy-v-moskve/russkaya-chajnaya-czeremoniya/","basePrice":30000},{"name":"Мастер-класс по сборке деревянных моделей","url":"https://alexgrim.ru/master-klassy-v-moskve/sborka-derevyannyh-modeley/","basePrice":12500},{"name":"Мастер-класс по сборке и росписи кораблей","url":"https://alexgrim.ru/master-klassy-v-moskve/sborka-i-rospis-korablej/","basePrice":14000},{"name":"Мастер-класс по скетчингу","url":"https://alexgrim.ru/master-klassy-v-moskve/scetching/","basePrice":11500},{"name":"Мастер-класс шерстяная акварель","url":"https://alexgrim.ru/master-klassy-v-moskve/sherstyanaya-akvarel/","basePrice":11500},{"name":"Мастер-класс шляпки канотье","url":"https://alexgrim.ru/master-klassy-v-moskve/shlyapki-kanote/","basePrice":17500},{"name":"Мастер-класс Создание и декорирование вуалеток","url":"https://alexgrim.ru/master-klassy-v-moskve/shlyapki-vualetki/","basePrice":12500},{"name":"Мастер-класс Шоколадно-винная вечеринка","url":"https://alexgrim.ru/master-klassy-v-moskve/shokoladno-vinnaya-vecherinka/","basePrice":26000},{"name":"Мастер-класс «Шоколадный поп-ит»","url":"https://alexgrim.ru/master-klassy-v-moskve/shokoladnyj-pop-it/","basePrice":18500},{"name":"Мастер-класс по изготовлению шоколада","url":"https://alexgrim.ru/master-klassy-v-moskve/shokolad-ruchnoj-raboty/","basePrice":14000},{"name":"Мастер-класс по созданию скраба для тела","url":"https://alexgrim.ru/master-klassy-v-moskve/skrab-dlya-tela/","basePrice":14000},{"name":"Мастер-класс по созданию роботов","url":"https://alexgrim.ru/master-klassy-v-moskve/smart-robots/","basePrice":17500},{"name":"Мастер-класс Соль для ванны","url":"https://alexgrim.ru/master-klassy-v-moskve/sol-dlya-vanny/","basePrice":14000},{"name":"Мастер-класс по созданию браслета Шамбала","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-brasleta-shambala/","basePrice":22000},{"name":"Мастер-класс Создание целебного мыла","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-celebnogo-myla/","basePrice":10500},{"name":"Мастер-класс Создание Кокошников","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-kokoshnikov/","basePrice":10500},{"name":"Создание комикса","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-komiksa/","basePrice":12500},{"name":"Создание новогоднего букета","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-novogodnego-buketa/","basePrice":25000},{"name":"Мастер-класс создание соевых свечей","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-soevyh-svechej/","basePrice":14000},{"name":"Мастер-класс создание свечей в кокосе","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-svechej-v-kokose/","basePrice":16500},{"name":"Создание свечи в ракушке","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-svechi-v-rakushke/","basePrice":14000},{"name":"Мастер-класс по созданию тантамаресок","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-tantamaresok/","basePrice":16500},{"name":"Мастер-класс по созданию украшений с часами","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-ukrashenij-s-chasami/","basePrice":14000},{"name":"Мастер-класс по созданию украшений из бижутерии","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-ukrasheniy/","basePrice":11500},{"name":"Мастер-класс создание веселых игрушек","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-veselyh-igrushek/","basePrice":9500},{"name":"Мастер-класс по созданию VIP-флорариумов","url":"https://alexgrim.ru/master-klassy-v-moskve/sozdanie-vip-florariumov/","basePrice":40000},{"name":"Спортивные выездные мастер-классы","url":"https://alexgrim.ru/master-klassy-v-moskve/sportivnie/","basePrice":10500},{"name":"Мастер-класс свечи из вощины","url":"https://alexgrim.ru/master-klassy-v-moskve/svechi-iz-voshchiny/","basePrice":11500},{"name":"Мастер-класс Светильник в банке","url":"https://alexgrim.ru/master-klassy-v-moskve/svetilnik-v-banke/","basePrice":12500},{"name":"Мастер-класс Светящийся новогодний шар","url":"https://alexgrim.ru/master-klassy-v-moskve/svetyashchijsya-novogodnij-shar/","basePrice":12500},{"name":"Мастер-класс по тату хной","url":"https://alexgrim.ru/master-klassy-v-moskve/tatu-hnoj/","basePrice":10500},{"name":"Мастер-класс по топиарию — волшебному семейному дереву","url":"https://alexgrim.ru/master-klassy-v-moskve/topiarij/","basePrice":12500},{"name":"Мастер-класс по твистингу","url":"https://alexgrim.ru/master-klassy-v-moskve/tvisting/","basePrice":9500},{"name":"Мастер-класс Украшения из УФ смолы","url":"https://alexgrim.ru/master-klassy-v-moskve/ukrashenie-iz-uf-smoly/","basePrice":16500},{"name":"Мастер-класс Декорирование капкейков","url":"https://alexgrim.ru/master-klassy-v-moskve/ukrashenie-kapkejkov/","basePrice":11500},{"name":"Мастер-класс Украшение медицинских масок","url":"https://alexgrim.ru/master-klassy-v-moskve/ukrashenie-medicinskih-masok/","basePrice":9500},{"name":"Мастер-класс Летнее украшение на ногу в стиле бохо","url":"https://alexgrim.ru/master-klassy-v-moskve/ukrashenie-na-nogu-v-stile-boho/","basePrice":12500},{"name":"Мастер-класс по упаковке подарков","url":"https://alexgrim.ru/master-klassy-v-moskve/upakovka-podarkov/","basePrice":9500},{"name":"Мастер-класс валяние из шерсти в Москве","url":"https://alexgrim.ru/master-klassy-v-moskve/valyanie-iz-shersti/","basePrice":10500},{"name":"Мастер-класс Варка варенья","url":"https://alexgrim.ru/master-klassy-v-moskve/varka-varenya/","basePrice":11500},{"name":"Мастер-класс венецианские маски своими руками","url":"https://alexgrim.ru/master-klassy-v-moskve/venecianskie-maski/","basePrice":11500},{"name":"Мастер-класс венки из живых цветов","url":"https://alexgrim.ru/master-klassy-v-moskve/venki-iz-zhivyh-cvetov/","basePrice":25000},{"name":"Мастер-класс по ветродуям-вертушкам","url":"https://alexgrim.ru/master-klassy-v-moskve/vetrodui-vertushki/","basePrice":9500},{"name":"Мастер-класс ВИП ароматическая свеча с декором","url":"https://alexgrim.ru/master-klassy-v-moskve/vip-aromaticheskaya-svecha/","basePrice":17500},{"name":"Мастер-класс VIP бомбочки для ванной","url":"https://alexgrim.ru/master-klassy-v-moskve/vip-bombochki-dlya-vannoj/","basePrice":16500},{"name":"VIP Волшебные палочки","url":"https://alexgrim.ru/master-klassy-v-moskve/vip-volshebnye-palochki/","basePrice":14000},{"name":"Восковые ручки","url":"https://alexgrim.ru/master-klassy-v-moskve/voskovye-ruchki/","basePrice":40000},{"name":"Мастер-класс рисование в стиле аниме","url":"https://alexgrim.ru/master-klassy-v-moskve/v-stile-anime/","basePrice":12500},{"name":"Мастер-класс по вязанию шарфов","url":"https://alexgrim.ru/master-klassy-v-moskve/vyazanie_sharfov/","basePrice":16500},{"name":"Кулинарные мастер-классы на день рождения","url":"https://alexgrim.ru/master-klassy-v-moskve/vyezdnye/kulinarnye/na-den-rozhdeniya/","basePrice":10500},{"name":"Мастер-класс Приготовление полезных смузи","url":"https://alexgrim.ru/master-klassy-v-moskve/vyezdnye/kulinarnye/prigotovlenie-kokteyley-smuzi/","basePrice":12500},{"name":"Мастер класс по высокоградусным настойкам (18+)","url":"https://alexgrim.ru/master-klassy-v-moskve/vysokogradusnye-nastojki/","basePrice":14000},{"name":"Мастер-класс по выжиганию по дереву","url":"https://alexgrim.ru/master-klassy-v-moskve/vyzhiganie-po-derevu-master-klass/","basePrice":10500},{"name":"Мастер-класс Японская чайная церемония","url":"https://alexgrim.ru/master-klassy-v-moskve/yaponskaya-chajnaya-czeremoniya/","basePrice":37500},{"name":"Мастер-класс Закладка для книг","url":"https://alexgrim.ru/master-klassy-v-moskve/zakladka-dlya-knig/","basePrice":9500},{"name":"Мастер-класс Здоровые завтраки","url":"https://alexgrim.ru/master-klassy-v-moskve/zdorovye-zavtraki/","basePrice":14000},{"name":"Мастер-класс Живые панно","url":"https://alexgrim.ru/master-klassy-v-moskve/zhivie-panno/","basePrice":26000},{"name":"Мастер-класс Зимняя флористика","url":"https://alexgrim.ru/master-klassy-v-moskve/zimnyaya-floristika/","basePrice":32000},{"name":"Мастер-класс по изготовлению значков","url":"https://alexgrim.ru/master-klassy-v-moskve/znachki-svoimi-rukami/","basePrice":10500},{"name":"Создание звезд из георгиевских лент","url":"https://alexgrim.ru/master-klassy-v-moskve/zvezdy-iz-georgievskie-lenty/","basePrice":9500},{"name":"Новогодний чайный купаж","url":"https://alexgrim.ru/novogodnie-master-klassy/chajnyj-kupazh/","basePrice":12500},{"name":"Мастер-класс Часы из еловых веток","url":"https://alexgrim.ru/novogodnie-master-klassy/chasy-iz-elovyh-vetok/","basePrice":14000},{"name":"Мастер-класс декор деревянной ёлки","url":"https://alexgrim.ru/novogodnie-master-klassy/decor-derevyanoj-elki/","basePrice":14000},{"name":"Мастер-класс Новогодние декоративные магниты","url":"https://alexgrim.ru/novogodnie-master-klassy/dekorativnye-magnity/","basePrice":10500},{"name":"Мастер-класс Декор елочки из фанеры","url":"https://alexgrim.ru/novogodnie-master-klassy/dekor-elochki-iz-fanery/","basePrice":14000},{"name":"Декор новогодних колпаков","url":"https://alexgrim.ru/novogodnie-master-klassy/dekor-kolpakov/","basePrice":9500},{"name":"Мастер-класс Декупаж новогодних шаров","url":"https://alexgrim.ru/novogodnie-master-klassy/dekupazh-elochnyh-sharov/","basePrice":9500},{"name":"Мастер-класс елка из живых веток ели","url":"https://alexgrim.ru/novogodnie-master-klassy/elka-iz-zhivyh-vetok-eli/","basePrice":32000},{"name":"Елочка из шерсти","url":"https://alexgrim.ru/novogodnie-master-klassy/elochka-iz-shersti/","basePrice":10500},{"name":"Мастер-класс Новогодние елочки из фетра с декором","url":"https://alexgrim.ru/novogodnie-master-klassy/elochki-iz-fetra/","basePrice":11500},{"name":"Мастер-класс Елочки из новогодних шаров","url":"https://alexgrim.ru/novogodnie-master-klassy/elochki-iz-novogodnih-sharov/","basePrice":16500},{"name":"Создание елочных игрушек-оленей из фанеры","url":"https://alexgrim.ru/novogodnie-master-klassy/elochnye-igrushki-oleni-iz-fanery/","basePrice":12500},{"name":"Мастер-класс Флорентийское саше","url":"https://alexgrim.ru/novogodnie-master-klassy/florentijskoe-sashe/","basePrice":11500},{"name":"Мастер-класс игрушки на елку из фетра","url":"https://alexgrim.ru/novogodnie-master-klassy/igrushki-na-elku-iz-fetra/","basePrice":10500},{"name":"Игрушки на елку в стиле Hygge","url":"https://alexgrim.ru/novogodnie-master-klassy/igrushki-na-elku-v-stile-hygge/","basePrice":10500},{"name":"Мастер-класс новогодняя гирлянда","url":"https://alexgrim.ru/novogodnie-master-klassy/izgotovlenie-girlyand/","basePrice":14000},{"name":"Мастер-класс Новогодняя композиция из елочных шаров и фигурок","url":"https://alexgrim.ru/novogodnie-master-klassy/kompoziciya-iz-sharov-i-figurok/","basePrice":22000},{"name":"Мастер-класс по росписи елочных шаров","url":"https://alexgrim.ru/novogodnie-master-klassy/master-klass-izgotovlenie-elochnyh-igrushek/","basePrice":9500},{"name":"Мастер-класс Новогодние ангелы","url":"https://alexgrim.ru/novogodnie-master-klassy/sozdanie-angelov/","basePrice":10500},{"name":"Мастер-класс по созданию новогодних елочек","url":"https://alexgrim.ru/novogodnie-master-klassy/sozdanie-elochek/","basePrice":11500},{"name":"Мастер-класс по созданию новогодних игрушек из лампочек","url":"https://alexgrim.ru/novogodnie-master-klassy/sozdanie-igrushek-iz-lampochek/","basePrice":9500},{"name":"Мастер-класс новогодний гном","url":"https://alexgrim.ru/novogodnie-master-klassy/sozdanie-novogodnego-gnoma/","basePrice":11500},{"name":"Мастер-класс Елочные эко-украшения","url":"https://alexgrim.ru/novogodnie-master-klassy/ukrashenie-na-elku/","basePrice":9500},{"name":"Мастер-класс Вальдорфские фонарики","url":"https://alexgrim.ru/novogodnie-master-klassy/valdorfskie-fonariki/","basePrice":9500},{"name":"Мастер-класс по изготовлению новогоднего венка из живых елок","url":"https://alexgrim.ru/novogodnie-master-klassy/venok-iz-zhivyh-elok/","basePrice":36000},{"name":"Мастер-класс создание монстр-книги из Гарри Поттера","url":"https://alexgrim.ru/sozdanie-monstr-knigi-iz-garri-pottera/","basePrice":16500}];
+const PRICE_CATEGORIES={"7500":{"10":7500,"15":10950,"20":14200,"30":21700,"50":35200,"100":65100,"150":89800,"200":109200,"300":141750},"8500":{"10":8500,"15":12450,"20":16200,"30":24900,"50":40450,"100":75600,"150":105550,"200":130200,"300":173250},"9500":{"10":9500,"15":13950,"20":18200,"30":28000,"50":45700,"100":86100,"150":121300,"200":151200,"300":204750},"10500":{"10":10500,"15":15450,"20":20200,"30":31200,"50":50900,"100":96600,"150":137000,"200":172200,"300":236250},"11500":{"10":11500,"15":16950,"20":22200,"30":34350,"50":56200,"100":107100,"150":152800,"200":193200,"300":267750},"12500":{"10":12500,"15":18450,"20":24200,"30":37500,"50":61400,"100":117600,"150":170750,"200":220500,"300":308700},"14000":{"10":14000,"15":20700,"20":27200,"30":42000,"50":68800,"100":131800,"150":191300,"200":247000,"300":345800},"15000":{"10":15000,"15":22200,"20":29200,"30":45400,"50":74550,"100":143850,"150":207900,"200":266700,"300":378000},"16500":{"10":16500,"15":24450,"20":32200,"30":50100,"50":82450,"100":159600,"150":231550,"200":298200,"300":425250},"17500":{"10":17500,"15":25950,"20":34200,"30":53250,"50":87700,"100":170100,"150":247300,"200":319200,"300":456750},"18500":{"10":18500,"15":27450,"20":36200,"30":56400,"50":92950,"100":178500,"150":256750,"200":327600,"300":459900},"20000":{"10":20000,"15":29700,"20":39200,"30":61100,"50":100800,"100":194250,"150":280350,"200":359100,"300":507150},"22000":{"10":22000,"15":32700,"20":43200,"30":67400,"50":111300,"100":215250,"150":311850,"200":401100,"300":570150},"25000":{"10":25000,"15":37200,"20":49200,"30":76900,"50":127050,"100":246750,"150":359100,"200":464100,"300":664650},"26000":{"10":26000,"15":38700,"20":51200,"30":80000,"50":132300,"100":257250,"150":374850,"200":485100,"300":696150},"28000":{"10":28000,"15":41700,"20":55200,"30":86300,"50":142800,"100":278250,"150":406350,"200":527100,"300":759150},"32000":{"10":32000,"15":47700,"20":63200,"30":98900,"50":163800,"100":320250,"150":469350,"200":611100,"300":885150},"36000":{"10":36000,"15":53700,"20":71200,"30":111500,"50":184800,"100":362250,"150":532350,"200":695100,"300":1011150},"38000":{"10":38000,"15":56700,"20":75200,"30":117800,"50":195300,"100":383250,"150":563850,"200":737100,"300":1074150},"40000":{"10":40000,"15":59700,"20":79200,"30":124100,"50":205800,"100":404250,"150":595350,"200":779100,"300":1137150}};
+let selectedMK=null;
+let newYearActive=false;
+const searchInput=document.getElementById('search');
+const dropdown=document.getElementById('dropdown');
+const quantityInput=document.getElementById('quantity');
+const calculateBtn=document.getElementById('calculateBtn');
+const resetBtn=document.getElementById('resetBtn');
+const resultDiv=document.getElementById('result');
+const toggleSwitch=document.getElementById('toggleSwitch');
+const invoiceToggle=document.getElementById('invoiceToggle');
+let invoiceActive=false;
+toggleSwitch.addEventListener('click',()=>{newYearActive=!newYearActive;toggleSwitch.classList.toggle('active',newYearActive)});
+invoiceToggle.addEventListener('click',()=>{invoiceActive=!invoiceActive;invoiceToggle.classList.toggle('active',invoiceActive);if(typeof updateTotalPrice==='function'){updateTotalPrice();}});
+searchInput.addEventListener('input',(e)=>{const query=e.target.value.toLowerCase().trim();const error=document.getElementById('searchError');error.classList.remove('show');if(query.length===0){showAllMasterClasses();return}const filtered=MASTER_CLASSES.filter(mk=>mk.name.toLowerCase().includes(query));displayDropdown(filtered,query)});
+function showAllMasterClasses(){displayDropdown(MASTER_CLASSES,'')}
+function displayDropdown(items,query){dropdown.innerHTML='';if(items.length===0){dropdown.innerHTML='<div style="padding:15px;text-align:center;color:#999">Ничего не найдено</div>';dropdown.classList.add('active');return}items.forEach(mk=>{const item=document.createElement('div');item.className='dropdown-item';let displayName=mk.name;if(query){const regex=new RegExp(`(${query})`,'gi');displayName=mk.name.replace(regex,'<em>$1</em>')}item.innerHTML=displayName;item.addEventListener('click',()=>selectMasterClass(mk));dropdown.appendChild(item)});dropdown.classList.add('active')}
+function selectMasterClass(mk){selectedMK=mk;searchInput.value=mk.name;dropdown.classList.remove('active');document.getElementById('searchError').classList.remove('show');quantityInput.focus()}
+function calculatePrice(basePrice,quantity){const priceKey=basePrice.toString();const prices=PRICE_CATEGORIES[priceKey];if(!prices)return null;const intervals=[10,15,20,30,50,100,150,200,300];if(intervals.includes(quantity)){return prices[quantity]}let lowerInterval=null;for(let i of intervals){if(i<quantity){lowerInterval=i}else{break}}if(lowerInterval===null){lowerInterval=10}const price=prices[lowerInterval];return Math.round((price/lowerInterval)*quantity)}
+calculateBtn.addEventListener('click',()=>{const searchError=document.getElementById('searchError');const quantityError=document.getElementById('quantityError');searchError.classList.remove('show');quantityError.classList.remove('show');if(!selectedMK){searchError.classList.add('show');return}const quantity=parseInt(quantityInput.value);if(!quantity||quantity<=0){quantityError.classList.add('show');return}let price=calculatePrice(selectedMK.basePrice,quantity);if(!price){alert('Ошибка расчета. Попробуйте еще раз.');return}let finalPrice=price;if(newYearActive){finalPrice=Math.round(price*1.2)}document.getElementById('resultTitle').textContent=selectedMK.name;document.getElementById('resultLink').textContent=selectedMK.url;document.getElementById('resultLink').href=selectedMK.url;document.getElementById('resultDetails').textContent=`Количество участников: ${quantity}`;document.getElementById('resultPrice').textContent=`${quantity} чел/${finalPrice.toLocaleString('ru-RU')}р`;resultDiv.classList.add('active');document.getElementById('copySuccess').classList.remove('show');document.getElementById('copyBtn').onclick=()=>{const baseLine=document.getElementById('resultPrice').textContent;const extraLine=document.getElementById('resultPriceExtra')?document.getElementById('resultPriceExtra').textContent:'';const text=`${selectedMK.name}\n${selectedMK.url}\n${baseLine}${extraLine?`\\n${extraLine}`:''}`;navigator.clipboard.writeText(text).then(()=>{const successMsg=document.getElementById('copySuccess');successMsg.classList.add('show');setTimeout(()=>successMsg.classList.remove('show'),2000)})};if(typeof travelAutoMasters==='function'){travelAutoMasters(quantity);}if(typeof updateTotalPrice==='function'){updateTotalPrice();}});
+resetBtn.addEventListener('click',()=>{searchInput.value='';quantityInput.value='';selectedMK=null;newYearActive=false;toggleSwitch.classList.remove('active');dropdown.classList.remove('active');resultDiv.classList.remove('active');document.getElementById('searchError').classList.remove('show');document.getElementById('quantityError').classList.remove('show');searchInput.focus()});
+document.addEventListener('click',(e)=>{if(!e.target.closest('.search-wrapper')){dropdown.classList.remove('active')}});
+console.log(`Загружено МК: ${MASTER_CLASSES.length}`);
+console.log(`Ценовых категорий: ${Object.keys(PRICE_CATEGORIES).length}`);
+searchInput.focus();
+quantityInput.addEventListener('input',()=>{const quantity=parseInt(quantityInput.value);if(typeof travelAutoMasters==='function'){travelAutoMasters(quantity);}});
+</script>
+<div class="container travel-block" style="margin-top:20px">
+  <div class="travel-container">
+    <div class="travel-title">Выезд мастеров (добавляется к стоимости)</div>
+    <div class="form-group">
+      <label for="travelAddress">Адрес выезда</label>
+      <div class="search-wrapper">
+        <input type="text" id="travelAddress" placeholder="Введите адрес выезда" autocomplete="off">
+        <div class="dropdown-list" id="travelDropdown"></div>
+      </div>
+    </div>
+    <div class="travel-row">
+      <div style="flex:1">
+        <label for="mastersCount">Количество мастеров</label>
+        <input type="number" id="mastersCount" min="1" value="1">
+      </div>
+      <div style="flex:1">
+        <label for="travelDistance">КМ вручную</label>
+        <input type="number" id="travelDistance" min="0" step="0.1" placeholder="Введите вручную (если нет точного адреса)">
+      </div>
+    </div>
+    <div class="travel-actions">
+      <div class="toggle-switch" id="travelToggle">
+        <div class="toggle-knob"></div>
+      </div>
+      <span class="toggle-label">Добавить выезд к итоговой сумме</span>
+      <span id="travelStatus" class="travel-pill">Выезд: 0 ₽</span>
+    </div>
+    <div class="travel-result" id="travelResult">Введите адрес и нажмите “Рассчитать выезд”.</div>
+    <div class="button-group" style="margin-top:12px">
+      <button class="btn-calculate" id="travelCalcBtn">Рассчитать выезд</button>
+      <button class="btn-reset" id="travelClearBtn" type="button">Очистить</button>
+    </div>
+    <div id="travelMap" class="travel-map"></div>
+    <button class="btn-reset travel-import-mini" id="travelImportBtn" type="button">OSM JSON</button>
+    <input id="travelImportFile" type="file" accept=".json,application/json" style="display:none" />
+  </div>
+</div>
+</div>
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&load=package.full&apikey=1b0265f3-90d5-4684-8468-7dc32dd1f4b8" type="text/javascript"></script>
+<script>
+(function(){
+  const travelAddress=document.getElementById('travelAddress');
+  const travelDropdown=document.getElementById('travelDropdown');
+  const travelCalcBtn=document.getElementById('travelCalcBtn');
+  const travelResult=document.getElementById('travelResult');
+  const travelDistanceInput=document.getElementById('travelDistance');
+  const mastersCountInput=document.getElementById('mastersCount');
+  const travelToggle=document.getElementById('travelToggle');
+  const travelStatus=document.getElementById('travelStatus');
+  const travelImportBtn=document.getElementById('travelImportBtn');
+  const travelImportFile=document.getElementById('travelImportFile');
+  const travelMapEl=document.getElementById('travelMap');
+  const travelClearBtn=document.getElementById('travelClearBtn');
+
+  let travelEnabled=false;
+  let lastTravelCost=0;
+  let lastDistanceKm=0;
+  let travelBasePrice=null;
+  let travelMap=null;
+  let travelRoute=null;
+  let travelExitPlacemark=null;
+  let travelAddrPlacemark=null;
+  let ymapsReady=false;
+  const EXIT_TTL_MS=7*24*60*60*1000;
+  const OVERPASS_ENDPOINTS=[
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+  ];
+  const MKAD_BBOX=[55.5,37.1,55.9,38.0];
+
+  travelToggle.addEventListener('click',()=>{travelEnabled=!travelEnabled;travelToggle.classList.toggle('active',travelEnabled);updateTotalPrice();});
+
+  travelImportBtn.addEventListener('click',()=>travelImportFile.click());
+  travelImportFile.addEventListener('change',async(e)=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    try{
+      const text=await file.text();
+      const data=JSON.parse(text);
+      const exits=parseOverpassData(data);
+      localStorage.setItem('mkad_exits',JSON.stringify(exits));
+      localStorage.setItem('mkad_exits_updated_at',String(Date.now()));
+      travelResult.textContent=`Импортировано съездов: ${exits.length}`;
+    }catch(err){
+      travelResult.textContent=`Ошибка импорта OSM: ${err.message||err}`;
+    }finally{
+      e.target.value='';
+    }
+  });
+
+  travelClearBtn.addEventListener('click',()=>{
+    travelAddress.value='';
+    travelDistanceInput.value='';
+    lastTravelCost=0;
+    lastDistanceKm=0;
+    travelStatus.textContent='Выезд: 0 ₽';
+    travelResult.textContent='Введите адрес и нажмите “Рассчитать выезд”.';
+    if(travelRoute && travelMap) travelMap.geoObjects.remove(travelRoute);
+    if(travelExitPlacemark && travelMap) travelMap.geoObjects.remove(travelExitPlacemark);
+    if(travelAddrPlacemark && travelMap) travelMap.geoObjects.remove(travelAddrPlacemark);
+    travelRoute=null;
+    travelExitPlacemark=null;
+    travelAddrPlacemark=null;
+    updateTotalPrice();
+  });
+
+  function getCarPriceForKm(distanceKm){
+    const tiers=[
+      {max:5,price:750},{max:15,price:1500},{max:30,price:2250},{max:50,price:3000},
+      {max:70,price:3750},{max:90,price:4500},{max:110,price:5250},{max:130,price:6000},
+      {max:150,price:6750},{max:170,price:7500},{max:190,price:8250},{max:210,price:9000},
+      {max:230,price:9750},{max:250,price:10500},
+    ];
+    for(const t of tiers){if(distanceKm<=t.max)return t.price;}
+    return tiers[tiers.length-1].price;
+  }
+
+  function travelAutoMasters(quantity){
+    if(!quantity || quantity<=0) return;
+    const masters=Math.ceil(quantity/15);
+    mastersCountInput.value=String(masters);
+  }
+  window.travelAutoMasters=travelAutoMasters;
+
+  function updateTotalPrice(){
+    const resultPrice=document.getElementById('resultPrice');
+    if(!resultPrice || !resultPrice.textContent) return;
+    if(!travelBasePrice){
+      const match=resultPrice.textContent.match(/\/([0-9\s]+)р/);
+      travelBasePrice=match?parseInt(match[1].replace(/\s/g,''),10):null;
+    }
+    const basePrice=travelBasePrice;
+    if(!basePrice) return;
+    const quantity=document.getElementById('quantity').value;
+    const total=travelEnabled ? basePrice+lastTravelCost : basePrice;
+    resultPrice.textContent=`${quantity} чел/${total.toLocaleString('ru-RU')}р${travelEnabled ? ' (с выездом)' : ''}`;
+    document.getElementById('resultDetails').textContent=`Количество участников: ${quantity}${travelEnabled ? ` • Выезд: ${lastTravelCost.toLocaleString('ru-RU')} р` : ''}`;
+    travelStatus.textContent=`Выезд: ${lastTravelCost.toLocaleString('ru-RU')} ₽`;
+
+    let extra=document.getElementById('resultPriceExtra');
+    if(invoiceActive){
+      if(!extra){
+        extra=document.createElement('div');
+        extra.id='resultPriceExtra';
+        extra.className='result-price';
+        resultPrice.insertAdjacentElement('afterend',extra);
+      }
+      const invoiceTotal=Math.round(total*1.1);
+      extra.textContent=`${quantity} чел/${invoiceTotal.toLocaleString('ru-RU')}р${travelEnabled ? ' (с выездом, при оплате по счету)' : ' (при оплате по счету)'}`;
+    }else{
+      if(extra) extra.remove();
+    }
+  }
+
+  function showTravelDropdown(items,query){
+    travelDropdown.innerHTML='';
+    if(items.length===0){travelDropdown.innerHTML='<div style="padding:15px;text-align:center;color:#999">Ничего не найдено</div>';travelDropdown.classList.add('active');return}
+    items.forEach(obj=>{
+      const item=document.createElement('div');
+      item.className='dropdown-item';
+      let displayName=obj.getAddressLine();
+      if(query){
+        const regex=new RegExp(`(${query})`,'gi');
+        displayName=displayName.replace(regex,'<em>$1</em>');
+      }
+      item.innerHTML=displayName;
+      item.addEventListener('click',()=>{travelAddress.value=obj.getAddressLine();travelDropdown.classList.remove('active');});
+      travelDropdown.appendChild(item);
+    });
+    travelDropdown.classList.add('active');
+  }
+
+  travelAddress.addEventListener('input',()=>{
+    const query=travelAddress.value.trim();
+    if(query.length<3){travelDropdown.classList.remove('active');return;}
+    if(!ymapsReady) return;
+    ymaps.geocode(query,{results:5}).then(res=>{
+      const items=[];
+      res.geoObjects.each(obj=>items.push(obj));
+      showTravelDropdown(items,query);
+    });
+  });
+
+  travelCalcBtn.addEventListener('click',()=>{
+    const address=travelAddress.value.trim();
+    const masters=Math.max(1,parseInt(mastersCountInput.value||'1',10));
+    const manualKm=parseFloat(travelDistanceInput.value);
+
+    if(manualKm && manualKm>0){
+      lastDistanceKm=manualKm;
+      const pricePerMaster=getCarPriceForKm(lastDistanceKm);
+      lastTravelCost=pricePerMaster*masters;
+      travelResult.textContent=`Км от МКАД: ${lastDistanceKm.toFixed(1)} • ${pricePerMaster} ₽ × ${masters} = ${lastTravelCost.toLocaleString('ru-RU')} ₽`;
+      updateTotalPrice();
+      return;
+    }
+
+    if(!address){travelResult.textContent='Введите адрес выезда.';return;}
+    if(!ymapsReady){
+      const proto=window.location.protocol;
+      travelResult.textContent=proto==='file:'?
+        'Карты не загрузились. Откройте через http://localhost и проверьте ключ.' :
+        'Карты не загрузились. Проверьте, разрешён ли домен в ключе Яндекс.Карт.';
+      return;
+    }
+
+    travelResult.textContent='Считаем расстояние...';
+    ymaps.geocode(address,{results:1}).then(async res=>{
+      const first=res.geoObjects.get(0);
+      if(!first){travelResult.textContent='Адрес не найден.';return;}
+      const coords=first.geometry.getCoordinates();
+      try{
+        const result=await distanceFromMkad(coords);
+        const distanceKm=result.distanceKm;
+        lastDistanceKm=Math.max(0,distanceKm);
+        const pricePerMaster=getCarPriceForKm(lastDistanceKm);
+        lastTravelCost=pricePerMaster*masters;
+        travelResult.textContent=`Км от МКАД: ${lastDistanceKm.toFixed(1)} • ${pricePerMaster} ₽ × ${masters} = ${lastTravelCost.toLocaleString('ru-RU')} ₽`;
+        renderMap(result,coords);
+        updateTotalPrice();
+      }catch(err){
+        travelResult.textContent=`Ошибка расчёта: ${err.message||err}`;
+      }
+    });
+  });
+
+  async function distanceFromMkad(coords){
+    const exits=await loadExits();
+    if(!exits || exits.length===0) throw new Error("Нет данных съездов. Импортируйте OSM JSON.");
+    const scored=exits.map(e=>({
+      exit:e,
+      straightKm:haversineKm(coords[0],coords[1],e.lat,e.lon)
+    })).sort((a,b)=>a.straightKm-b.straightKm);
+    const candidates=scored.slice(0,10);
+    let best=null;
+    let bestRoute=null;
+    let bestExit=null;
+    for(const c of candidates){
+      try{
+        const route=await ymaps.route([[c.exit.lat,c.exit.lon],coords],{
+          routingMode:"auto",
+          avoidTrafficJams:false,
+        });
+        const lengthMeters=route.getLength?route.getLength():route.getPaths().getLength();
+        const distKm=lengthMeters/1000;
+        if(!best||distKm<best){best=distKm;bestRoute=route;bestExit=c.exit;}
+      }catch(_e){
+        // ignore
+      }
+    }
+    if(best===null) return {distanceKm:candidates[0].straightKm,route:null,exit:candidates[0].exit};
+    return {distanceKm:best,route:bestRoute,exit:bestExit};
+  }
+
+  async function loadExits(){
+    const cached=localStorage.getItem('mkad_exits');
+    const cachedAt=parseInt(localStorage.getItem('mkad_exits_updated_at')||'0',10);
+    if(cached && cachedAt && (Date.now()-cachedAt)<EXIT_TTL_MS){
+      return JSON.parse(cached);
+    }
+    try{
+      const data=await fetchOverpass(buildOverpassQuery());
+      const exits=parseOverpassData(data);
+      localStorage.setItem('mkad_exits',JSON.stringify(exits));
+      localStorage.setItem('mkad_exits_updated_at',String(Date.now()));
+      return exits;
+    }catch(_e){
+      return cached ? JSON.parse(cached) : [];
+    }
+  }
+
+  function buildOverpassQuery(){
+    const bbox=MKAD_BBOX.join(',');
+    return `
+[out:json][timeout:25];
+(
+  relation(2094222);
+  way(r);
+  node(w);
+  node["highway"="motorway_junction"](${bbox});
+  way["highway"="motorway_link"]["ref"~"MKAD|МКАД|A-107|А-107"](${bbox});
+  node(w);
+);
+out body;
+`;
+  }
+
+  async function fetchOverpass(query){
+    let lastErr=null;
+    for(const endpoint of OVERPASS_ENDPOINTS){
+      try{
+        const res=await fetch(endpoint,{method:"POST",body:query,headers:{"Content-Type":"text/plain"}});
+        if(!res.ok) throw new Error(`Overpass HTTP ${res.status}`);
+        return await res.json();
+      }catch(err){lastErr=err;}
+    }
+    throw lastErr;
+  }
+
+  function parseOverpassData(data){
+    const nodes=new Map();
+    const mkadWays=[];
+    const junctionNodes=[];
+    const linkWays=[];
+    for(const el of data.elements||[]){
+      if(el.type==="node") nodes.set(el.id,el);
+      if(el.type==="way" && el.tags && el.tags.highway==="motorway") mkadWays.push(el);
+      if(el.type==="node" && el.tags && el.tags.highway==="motorway_junction") junctionNodes.push(el);
+      if(el.type==="way" && el.tags && el.tags.highway==="motorway_link") linkWays.push(el);
+    }
+    if(mkadWays.length===0){
+      mkadWays.push(...(data.elements||[]).filter(el=>el.type==="way" && el.nodes && el.nodes.length));
+    }
+    const mkadPolys=mkadWays.map(w=>w.nodes.map(nid=>{
+      const n=nodes.get(nid);
+      return n?[n.lat,n.lon]:null;
+    }).filter(Boolean)).filter(poly=>poly.length>=2);
+    if(mkadPolys.length===0) throw new Error("MKAD полилиния не найдена");
+    const exits=[];
+    for(const n of junctionNodes){
+      const distM=distanceToPolysM(n.lat,n.lon,mkadPolys);
+      if(distM<=250){
+        const name=(n.tags&& (n.tags.name||n.tags.ref)) || "Съезд МКАД";
+        exits.push({name,lat:n.lat,lon:n.lon});
+      }
+    }
+    for(const w of linkWays){
+      const wayNodes=w.nodes.map(nid=>nodes.get(nid)).filter(Boolean);
+      if(!wayNodes.length) continue;
+      let bestNode=null;
+      let bestDist=Infinity;
+      for(const n of wayNodes){
+        const distM=distanceToPolysM(n.lat,n.lon,mkadPolys);
+        if(distM<bestDist){bestDist=distM;bestNode=n;}
+      }
+      if(!bestNode || bestDist>300) continue;
+      const name=(w.tags && (w.tags.name||w.tags.ref||w.tags.destination)) || "Съезд МКАД";
+      exits.push({name,lat:bestNode.lat,lon:bestNode.lon});
+    }
+    const seen=new Set();
+    const deduped=[];
+    for(const e of exits){
+      const key=`${e.lat.toFixed(5)},${e.lon.toFixed(5)}`;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(e);
+    }
+    if(deduped.length===0) throw new Error("OSM данные не содержат съездов");
+    return deduped;
+  }
+
+  function distanceToPolysM(lat,lon,polys){
+    let best=Infinity;
+    for(const poly of polys){
+      if(poly.length<2) continue;
+      const d=distanceToPolyM(lat,lon,poly);
+      if(d<best) best=d;
+    }
+    return best;
+  }
+
+  function distanceToPolyM(lat,lon,poly){
+    let best=Infinity;
+    for(let i=0;i<poly.length-1;i++){
+      const [lat1,lon1]=poly[i];
+      const [lat2,lon2]=poly[i+1];
+      const d=pointToSegmentDistanceM(lat,lon,lat1,lon1,lat2,lon2);
+      if(d<best) best=d;
+    }
+    return best;
+  }
+
+  function pointToSegmentDistanceM(lat,lon,lat1,lon1,lat2,lon2){
+    const x=lon*Math.PI/180;
+    const y=lat*Math.PI/180;
+    const x1=lon1*Math.PI/180;
+    const y1=lat1*Math.PI/180;
+    const x2=lon2*Math.PI/180;
+    const y2=lat2*Math.PI/180;
+    const dx=x2-x1;
+    const dy=y2-y1;
+    if(dx===0 && dy===0) return haversineKm(lat,lon,lat1,lon1)*1000;
+    let t=((x-x1)*dx+(y-y1)*dy)/(dx*dx+dy*dy);
+    t=Math.max(0,Math.min(1,t));
+    const projX=x1+t*dx;
+    const projY=y1+t*dy;
+    const projLat=projY*180/Math.PI;
+    const projLon=projX*180/Math.PI;
+    return haversineKm(lat,lon,projLat,projLon)*1000;
+  }
+
+  function haversineKm(lat1,lon1,lat2,lon2){
+    const R=6371;
+    const dLat=(lat2-lat1)*Math.PI/180;
+    const dLon=(lon2-lon1)*Math.PI/180;
+    const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  }
+
+  document.getElementById('calculateBtn').addEventListener('click',()=>{
+    setTimeout(()=>{
+      const text=document.getElementById('resultPrice').textContent;
+      const match=text.match(/\/([0-9\s]+)р/);
+      travelBasePrice=match?parseInt(match[1].replace(/\s/g,''),10):null;
+      updateTotalPrice();
+    },0);
+  });
+
+  if(window.ymaps){
+    ymaps.ready(()=>{
+      ymapsReady=true;
+      if(travelMapEl && !travelMap){
+        travelMap=new ymaps.Map(travelMapEl,{center:[55.75,37.62],zoom:9,controls:["zoomControl"]});
+      }
+    });
+  }
+  setTimeout(()=>{
+    if(!ymapsReady){
+      const proto=window.location.protocol;
+      travelResult.textContent=proto==='file:'?
+        'Карты не загрузились. Откройте страницу через http://localhost и проверьте ключ.' :
+        'Карты не загрузились. Проверьте, разрешён ли домен в ключе Яндекс.Карт.';
+    }
+  },1500);
+
+  function renderMap(result,coords){
+    if(!ymapsReady || !travelMapEl) return;
+    if(!travelMap){
+      travelMap=new ymaps.Map(travelMapEl,{center:[55.75,37.62],zoom:9,controls:["zoomControl"]});
+    }
+    if(travelRoute) travelMap.geoObjects.remove(travelRoute);
+    if(travelExitPlacemark) travelMap.geoObjects.remove(travelExitPlacemark);
+    if(travelAddrPlacemark) travelMap.geoObjects.remove(travelAddrPlacemark);
+    if(result.route){
+      travelRoute=result.route;
+      travelMap.geoObjects.add(travelRoute);
+    }
+    if(result.exit){
+      travelExitPlacemark=new ymaps.Placemark([result.exit.lat,result.exit.lon],{iconCaption:"Съезд"});
+      travelMap.geoObjects.add(travelExitPlacemark);
+    }
+    travelAddrPlacemark=new ymaps.Placemark(coords,{iconCaption:"Адрес"});
+    travelMap.geoObjects.add(travelAddrPlacemark);
+    if(travelRoute && travelRoute.getPaths){
+      const bounds=travelRoute.getPaths().getBounds();
+      if(bounds) travelMap.setBounds(bounds,{checkZoomRange:true,zoomMargin:30});
+    }else if(result.exit){
+      travelMap.setBounds([coords,[result.exit.lat,result.exit.lon]],{checkZoomRange:true,zoomMargin:30});
+    }
+  }
+
+})();
+</script>
+</body>
+</html>
