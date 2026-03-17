@@ -46,6 +46,17 @@ button{flex:1;padding:12px 20px;border:none;border-radius:8px;font-size:16px;fon
 .copy-success.show{display:block}
 .error{color:#dc3545;font-size:14px;margin-top:8px;display:none}
 .error.show{display:block}
+@media (max-width:600px){
+  body{padding:12px}
+  .container{padding:20px;border-radius:10px}
+  h1{font-size:22px;margin-bottom:20px}
+  .button-group{flex-direction:column}
+  button{width:100%}
+  .toggle-group{flex-direction:column;align-items:flex-start}
+  .travel-row{flex-direction:column}
+  .travel-map{height:220px}
+  .travel-import-mini{position:static;margin-top:10px}
+}
 </style>
 <style>
 .travel-container{margin-top:30px;padding:20px;border:2px dashed #e0e0e0;border-radius:12px;background:#fafafa;position:relative}
@@ -326,7 +337,13 @@ quantityInput.addEventListener('input',()=>{const quantity=parseInt(quantityInpu
     }
 
     if(!address){travelResult.textContent='Введите адрес выезда.';return;}
-    if(!ymapsReady){travelResult.textContent='Карты не загрузились. Откройте через http://localhost и проверьте ключ.';return;}
+    if(!ymapsReady){
+      const proto=window.location.protocol;
+      travelResult.textContent=proto==='file:'?
+        'Карты не загрузились. Откройте через http://localhost и проверьте ключ.' :
+        'Карты не загрузились. Проверьте, разрешён ли домен в ключе Яндекс.Карт.';
+      return;
+    }
 
     travelResult.textContent='Считаем расстояние...';
     ymaps.geocode(address,{results:1}).then(async res=>{
@@ -540,7 +557,10 @@ out body;
   }
   setTimeout(()=>{
     if(!ymapsReady){
-      travelResult.textContent='Карты не загрузились. Откройте страницу через http://localhost и проверьте ключ.';
+      const proto=window.location.protocol;
+      travelResult.textContent=proto==='file:'?
+        'Карты не загрузились. Откройте страницу через http://localhost и проверьте ключ.' :
+        'Карты не загрузились. Проверьте, разрешён ли домен в ключе Яндекс.Карт.';
     }
   },1500);
 
