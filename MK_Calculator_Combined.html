@@ -81,6 +81,12 @@ button{flex:1;padding:12px 20px;border:none;border-radius:8px;font-size:16px;fon
 </div>
 <span class="toggle-label">Наценка 20%</span>
 </div>
+<div class="toggle-group">
+<div class="toggle-switch" id="invoiceToggle">
+<div class="toggle-knob"></div>
+</div>
+<span class="toggle-label">Оплата по счету (+10%)</span>
+</div>
 <div class="button-group">
 <button class="btn-calculate" id="calculateBtn">Рассчитать</button>
 <button class="btn-reset" id="resetBtn">Очистить</button>
@@ -106,13 +112,16 @@ const calculateBtn=document.getElementById('calculateBtn');
 const resetBtn=document.getElementById('resetBtn');
 const resultDiv=document.getElementById('result');
 const toggleSwitch=document.getElementById('toggleSwitch');
+const invoiceToggle=document.getElementById('invoiceToggle');
+let invoiceActive=false;
 toggleSwitch.addEventListener('click',()=>{newYearActive=!newYearActive;toggleSwitch.classList.toggle('active',newYearActive)});
+invoiceToggle.addEventListener('click',()=>{invoiceActive=!invoiceActive;invoiceToggle.classList.toggle('active',invoiceActive);if(typeof updateTotalPrice==='function'){updateTotalPrice();}});
 searchInput.addEventListener('input',(e)=>{const query=e.target.value.toLowerCase().trim();const error=document.getElementById('searchError');error.classList.remove('show');if(query.length===0){showAllMasterClasses();return}const filtered=MASTER_CLASSES.filter(mk=>mk.name.toLowerCase().includes(query));displayDropdown(filtered,query)});
 function showAllMasterClasses(){displayDropdown(MASTER_CLASSES,'')}
 function displayDropdown(items,query){dropdown.innerHTML='';if(items.length===0){dropdown.innerHTML='<div style="padding:15px;text-align:center;color:#999">Ничего не найдено</div>';dropdown.classList.add('active');return}items.forEach(mk=>{const item=document.createElement('div');item.className='dropdown-item';let displayName=mk.name;if(query){const regex=new RegExp(`(${query})`,'gi');displayName=mk.name.replace(regex,'<em>$1</em>')}item.innerHTML=displayName;item.addEventListener('click',()=>selectMasterClass(mk));dropdown.appendChild(item)});dropdown.classList.add('active')}
 function selectMasterClass(mk){selectedMK=mk;searchInput.value=mk.name;dropdown.classList.remove('active');document.getElementById('searchError').classList.remove('show');quantityInput.focus()}
 function calculatePrice(basePrice,quantity){const priceKey=basePrice.toString();const prices=PRICE_CATEGORIES[priceKey];if(!prices)return null;const intervals=[10,15,20,30,50,100,150,200,300];if(intervals.includes(quantity)){return prices[quantity]}let lowerInterval=null;for(let i of intervals){if(i<quantity){lowerInterval=i}else{break}}if(lowerInterval===null){lowerInterval=10}const price=prices[lowerInterval];return Math.round((price/lowerInterval)*quantity)}
-calculateBtn.addEventListener('click',()=>{const searchError=document.getElementById('searchError');const quantityError=document.getElementById('quantityError');searchError.classList.remove('show');quantityError.classList.remove('show');if(!selectedMK){searchError.classList.add('show');return}const quantity=parseInt(quantityInput.value);if(!quantity||quantity<=0){quantityError.classList.add('show');return}let price=calculatePrice(selectedMK.basePrice,quantity);if(!price){alert('Ошибка расчета. Попробуйте еще раз.');return}let finalPrice=price;let priceText=`${quantity} чел/${price.toLocaleString('ru-RU')}р`;if(newYearActive){finalPrice=Math.round(price*1.2);priceText=`${quantity} чел/${finalPrice.toLocaleString('ru-RU')}р (с наценкой)`}document.getElementById('resultTitle').textContent=selectedMK.name;document.getElementById('resultLink').textContent=selectedMK.url;document.getElementById('resultLink').href=selectedMK.url;document.getElementById('resultDetails').textContent=`Количество участников: ${quantity}`;document.getElementById('resultPrice').textContent=priceText;resultDiv.classList.add('active');document.getElementById('copySuccess').classList.remove('show');document.getElementById('copyBtn').onclick=()=>{const text=`${selectedMK.name}\n${selectedMK.url}\n${priceText}`;navigator.clipboard.writeText(text).then(()=>{const successMsg=document.getElementById('copySuccess');successMsg.classList.add('show');setTimeout(()=>successMsg.classList.remove('show'),2000)})};if(typeof travelAutoMasters==='function'){travelAutoMasters(quantity);}});
+calculateBtn.addEventListener('click',()=>{const searchError=document.getElementById('searchError');const quantityError=document.getElementById('quantityError');searchError.classList.remove('show');quantityError.classList.remove('show');if(!selectedMK){searchError.classList.add('show');return}const quantity=parseInt(quantityInput.value);if(!quantity||quantity<=0){quantityError.classList.add('show');return}let price=calculatePrice(selectedMK.basePrice,quantity);if(!price){alert('Ошибка расчета. Попробуйте еще раз.');return}let finalPrice=price;if(newYearActive){finalPrice=Math.round(price*1.2)}document.getElementById('resultTitle').textContent=selectedMK.name;document.getElementById('resultLink').textContent=selectedMK.url;document.getElementById('resultLink').href=selectedMK.url;document.getElementById('resultDetails').textContent=`Количество участников: ${quantity}`;document.getElementById('resultPrice').textContent=`${quantity} чел/${finalPrice.toLocaleString('ru-RU')}р`;resultDiv.classList.add('active');document.getElementById('copySuccess').classList.remove('show');document.getElementById('copyBtn').onclick=()=>{const baseLine=document.getElementById('resultPrice').textContent;const extraLine=document.getElementById('resultPriceExtra')?document.getElementById('resultPriceExtra').textContent:'';const text=`${selectedMK.name}\n${selectedMK.url}\n${baseLine}${extraLine?`\\n${extraLine}`:''}`;navigator.clipboard.writeText(text).then(()=>{const successMsg=document.getElementById('copySuccess');successMsg.classList.add('show');setTimeout(()=>successMsg.classList.remove('show'),2000)})};if(typeof travelAutoMasters==='function'){travelAutoMasters(quantity);}if(typeof updateTotalPrice==='function'){updateTotalPrice();}});
 resetBtn.addEventListener('click',()=>{searchInput.value='';quantityInput.value='';selectedMK=null;newYearActive=false;toggleSwitch.classList.remove('active');dropdown.classList.remove('active');resultDiv.classList.remove('active');document.getElementById('searchError').classList.remove('show');document.getElementById('quantityError').classList.remove('show');searchInput.focus()});
 document.addEventListener('click',(e)=>{if(!e.target.closest('.search-wrapper')){dropdown.classList.remove('active')}});
 console.log(`Загружено МК: ${MASTER_CLASSES.length}`);
@@ -257,6 +266,20 @@ quantityInput.addEventListener('input',()=>{const quantity=parseInt(quantityInpu
     resultPrice.textContent=`${quantity} чел/${total.toLocaleString('ru-RU')}р${travelEnabled ? ' (с выездом)' : ''}`;
     document.getElementById('resultDetails').textContent=`Количество участников: ${quantity}${travelEnabled ? ` • Выезд: ${lastTravelCost.toLocaleString('ru-RU')} р` : ''}`;
     travelStatus.textContent=`Выезд: ${lastTravelCost.toLocaleString('ru-RU')} ₽`;
+
+    let extra=document.getElementById('resultPriceExtra');
+    if(invoiceActive){
+      if(!extra){
+        extra=document.createElement('div');
+        extra.id='resultPriceExtra';
+        extra.className='result-price';
+        resultPrice.insertAdjacentElement('afterend',extra);
+      }
+      const invoiceTotal=Math.round(total*1.1);
+      extra.textContent=`${quantity} чел/${invoiceTotal.toLocaleString('ru-RU')}р${travelEnabled ? ' (с выездом, при оплате по счету)' : ' (при оплате по счету)'}`;
+    }else{
+      if(extra) extra.remove();
+    }
   }
 
   function showTravelDropdown(items,query){
